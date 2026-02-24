@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mountain of Fire and Miracles Ministries – SW 58 Araromi, Akure</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  /* ── MFM BRAND PALETTE ──────────────────────────────
+     Purple  = Royal Priesthood   #5B1FA2 / #3D1170
+     White   = Holiness           #FFFFFF / #F7F5FB
+     Black   = The Mountain       #1A1A2E / #0D0D1A
+     Red     = Holy Ghost Fire    #CC0000 / #E8000B
+     Gold    = Glory              #C9940A
+  ─────────────────────────────────────────────────── */
+  :root {
+    --purple:    #5B1FA2;
+    --purple-dk: #3D1170;
+    --purple-lt: #7B3CC3;
+    --purple-bg: #F0EBF9;
+    --white:     #FFFFFF;
+    --offwhite:  #F7F5FB;
+    --mtn:       #1A1A2E;
+    --mtn-lt:    #2D2D4A;
+    --red:       #CC0000;
+    --red-lt:    #E8000B;
+    --gold:      #C9940A;
+    --text:      #1A1A2E;
+    --muted:     #6B6680;
+    --border:    #DDD5EC;
+  }
+
+  html { scroll-behavior:smooth; }
+  body { background:var(--white); color:var(--text); font-family:'Open Sans',sans-serif; overflow-x:hidden; }
+
+  /* ── TOPBAR ─────────────────────────────────── */
+  .topbar { background:var(--purple-dk); color:rgba(255,255,255,.8); font-size:.72rem; font-family:'Montserrat',sans-serif; letter-spacing:.06em; padding:.45rem 2rem; display:flex; justify-content:space-between; align-items:center; }
+  .topbar a { color:rgba(255,255,255,.8); text-decoration:none; }
+  .topbar a:hover { color:#fff; }
+
+  /* ── NAV ─────────────────────────────────────── */
+  nav { position:sticky; top:0; z-index:200; background:var(--white); border-bottom:3px solid var(--purple); box-shadow:0 2px 16px rgba(91,31,162,.12); }
+  .nav-inner { max-width:1200px; margin:0 auto; padding:.8rem 2rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .nav-logo { display:flex; align-items:center; gap:.9rem; text-decoration:none; }
+  .logo-emblem { width:54px; height:54px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:3px solid var(--gold); box-shadow:0 0 0 2px var(--purple-dk); }
+  .logo-mountain { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; width:30px; height:20px; }
+  .logo-mountain svg { width:30px; height:20px; }
+  .logo-text { line-height:1.2; }
+  .logo-text .l1 { font-family:'Montserrat',sans-serif; font-weight:800; font-size:.8rem; color:var(--purple-dk); letter-spacing:.04em; text-transform:uppercase; }
+  .logo-text .l2 { font-family:'Open Sans',sans-serif; font-size:.68rem; color:var(--muted); }
+  .nav-links { display:flex; gap:.2rem; list-style:none; }
+  .nav-links a { font-family:'Montserrat',sans-serif; font-size:.7rem; font-weight:600; letter-spacing:.06em; color:var(--mtn); text-decoration:none; text-transform:uppercase; padding:.5rem .75rem; border-radius:3px; transition:background .2s,color .2s; }
+  .nav-links a:hover { background:var(--purple-bg); color:var(--purple); }
+  .nav-cta { background:var(--red); color:#fff; font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:.6rem 1.4rem; border-radius:3px; text-decoration:none; transition:background .2s; white-space:nowrap; }
+  .nav-cta:hover { background:#A80000; }
+  .hamburger { display:none; flex-direction:column; gap:5px; cursor:pointer; border:none; background:none; padding:.3rem; }
+  .hamburger span { display:block; width:24px; height:2px; background:var(--purple); border-radius:2px; }
+  .mobile-menu { display:none; position:fixed; top:0; left:0; width:100%; height:100vh; background:rgba(61,17,112,.97); z-index:300; flex-direction:column; padding:5rem 2rem 2rem; gap:.5rem; overflow-y:auto; }
+  .mobile-menu.open { display:flex; }
+  .mobile-close { position:absolute; top:1.2rem; right:1.5rem; background:none; border:none; color:#fff; font-size:1.8rem; cursor:pointer; line-height:1; }
+  .mobile-menu a { font-family:'Montserrat',sans-serif; font-size:1rem; font-weight:600; letter-spacing:.06em; color:rgba(255,255,255,.85); text-decoration:none; text-transform:uppercase; padding:.9rem 0; border-bottom:1px solid rgba(255,255,255,.1); }
+  .mobile-menu a:hover { color:#fff; }
+
+  /* ── BUTTONS ─────────────────────────────────── */
+  .btn-purple { background:var(--purple); color:#fff; font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.85rem 2rem; border:none; cursor:pointer; text-decoration:none; border-radius:4px; display:inline-block; transition:background .2s,transform .2s,box-shadow .2s; box-shadow:0 4px 16px rgba(91,31,162,.3); }
+  .btn-purple:hover { background:var(--purple-dk); transform:translateY(-2px); box-shadow:0 8px 24px rgba(91,31,162,.4); }
+  .btn-red { background:var(--red); color:#fff; font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.85rem 2rem; border:none; cursor:pointer; text-decoration:none; border-radius:4px; display:inline-block; transition:background .2s,transform .2s; box-shadow:0 4px 16px rgba(204,0,0,.3); }
+  .btn-red:hover { background:#A80000; transform:translateY(-2px); }
+  .btn-outline-white { background:transparent; color:#fff; font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.85rem 2rem; border:2px solid rgba(255,255,255,.7); cursor:pointer; text-decoration:none; border-radius:4px; display:inline-block; transition:background .2s,border-color .2s; }
+  .btn-outline-white:hover { background:rgba(255,255,255,.12); border-color:#fff; }
+  .btn-outline-purple { background:transparent; color:var(--purple); font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.85rem 2rem; border:2px solid var(--purple); cursor:pointer; text-decoration:none; border-radius:4px; display:inline-block; transition:background .2s; }
+  .btn-outline-purple:hover { background:var(--purple-bg); }
+
+  /* ── HERO ─────────────────────────────────────── */
+  .hero { position:relative; min-height:92vh; background:linear-gradient(135deg, var(--purple-dk) 0%, var(--mtn) 60%, #0D0D1A 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:5rem 2rem 4rem; overflow:hidden; }
+  .hero-mountain-bg { position:absolute; bottom:0; left:0; width:100%; pointer-events:none; opacity:.12; }
+  .hero-mountain-bg svg { width:100%; display:block; }
+  .hero::after { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 60% 50% at 50% 100%, rgba(204,0,0,.18) 0%, transparent 70%); pointer-events:none; }
+  .hero-badge { font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.25em; color:rgba(255,255,255,.7); text-transform:uppercase; border:1px solid rgba(255,255,255,.25); padding:.4rem 1.4rem; border-radius:30px; margin-bottom:1.8rem; position:relative; z-index:1; animation:fadeUp 1s ease both; }
+  .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2.2rem,6vw,5rem); font-weight:900; line-height:1.08; color:#fff; position:relative; z-index:1; animation:fadeUp 1s .15s ease both; margin-bottom:.6rem; }
+  .hero h1 span { color:var(--gold); }
+  .hero-location { font-family:'Montserrat',sans-serif; font-size:.9rem; font-weight:600; letter-spacing:.2em; color:rgba(255,255,255,.6); text-transform:uppercase; margin-bottom:1.8rem; position:relative; z-index:1; animation:fadeUp 1s .3s ease both; }
+  .hero-tagline { font-size:1.05rem; line-height:1.8; color:rgba(255,255,255,.75); max-width:580px; position:relative; z-index:1; animation:fadeUp 1s .45s ease both; margin-bottom:2.5rem; }
+  .hero-btns { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; position:relative; z-index:1; animation:fadeUp 1s .6s ease both; }
+  .hero-scroll { position:absolute; bottom:2rem; left:50%; transform:translateX(-50%); z-index:2; display:flex; flex-direction:column; align-items:center; gap:.4rem; color:rgba(255,255,255,.4); font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.15em; text-transform:uppercase; }
+  .hero-scroll::after { content:''; display:block; width:1px; height:30px; background:rgba(255,255,255,.3); animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:.3} 50%{opacity:1} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── STATS STRIP ─────────────────────────────── */
+  .stats-strip { background:var(--purple); display:grid; grid-template-columns:repeat(4,1fr); }
+  .stat-item { padding:1.8rem 1rem; text-align:center; border-right:1px solid rgba(255,255,255,.12); }
+  .stat-item:last-child { border-right:none; }
+  .stat-num { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:#fff; line-height:1; }
+  .stat-lbl { font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.65); margin-top:.3rem; }
+
+  /* ── SECTION UTILITY ─────────────────────────── */
+  .section-wrap { max-width:1100px; margin:0 auto; padding:5rem 2rem; }
+  .section-wrap.narrow { max-width:860px; }
+  .section-head { text-align:center; margin-bottom:3.5rem; }
+  .section-eyebrow { font-family:'Montserrat',sans-serif; font-size:.68rem; font-weight:700; letter-spacing:.25em; text-transform:uppercase; color:var(--red); margin-bottom:.6rem; }
+  .section-title { font-family:'Playfair Display',serif; font-size:clamp(1.6rem,3vw,2.6rem); font-weight:900; color:var(--mtn); line-height:1.2; margin-bottom:.8rem; }
+  .section-title.light { color:#fff; }
+  .section-divider { width:56px; height:4px; background:linear-gradient(90deg,var(--purple),var(--red)); border-radius:2px; margin:.8rem auto 0; }
+  .section-sub { font-size:.95rem; color:var(--muted); line-height:1.8; max-width:580px; margin:.8rem auto 0; }
+
+  /* ── SCRIPTURE BAND ──────────────────────────── */
+  .scripture-band { background:var(--offwhite); border-top:1px solid var(--border); border-bottom:4px solid var(--purple); padding:1.6rem 2rem; text-align:center; }
+  .scripture-band blockquote { font-family:'Playfair Display',serif; font-size:1.15rem; font-style:italic; color:var(--purple-dk); }
+  .scripture-band cite { font-family:'Montserrat',sans-serif; font-size:.7rem; font-weight:700; letter-spacing:.18em; color:var(--red); font-style:normal; margin-left:.6rem; }
+
+  /* ── ABOUT ───────────────────────────────────── */
+  .about-bg { background:var(--white); }
+  .about-grid { display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; }
+  .about-text p { color:#4A4465; line-height:1.9; margin-bottom:1rem; font-size:.96rem; }
+  .about-pillars { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:2rem; }
+  .pillar { background:var(--offwhite); border:1px solid var(--border); border-radius:6px; padding:1.2rem; display:flex; gap:.8rem; align-items:flex-start; }
+  .pillar-icon { font-size:1.6rem; flex-shrink:0; }
+  .pillar-text h4 { font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; color:var(--purple); text-transform:uppercase; letter-spacing:.06em; margin-bottom:.2rem; }
+  .pillar-text p { font-size:.82rem; color:var(--muted); line-height:1.5; }
+  .about-visual { position:relative; }
+  .about-box { background:linear-gradient(135deg,var(--purple-dk),var(--mtn)); border-radius:8px; padding:3rem 2rem; color:#fff; }
+  .about-box h3 { font-family:'Playfair Display',serif; font-size:1.4rem; margin-bottom:1.5rem; color:var(--gold); }
+  .about-stat-row { display:flex; align-items:center; gap:1rem; padding:.9rem 0; border-bottom:1px solid rgba(255,255,255,.1); }
+  .about-stat-row:last-child { border-bottom:none; }
+  .about-stat-row .aicon { font-size:1.6rem; }
+  .about-stat-row .alabel { font-family:'Montserrat',sans-serif; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.55); }
+  .about-stat-row .aval { font-family:'Playfair Display',serif; font-size:1.1rem; color:#fff; }
+  .about-accent { position:absolute; top:-14px; right:-14px; width:80px; height:80px; background:var(--red); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.2rem; box-shadow:0 4px 24px rgba(204,0,0,.5); }
+
+  /* ── PASTOR ───────────────────────────────────── */
+  .pastor-bg { background:var(--offwhite); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .pastor-grid { display:grid; grid-template-columns:300px 1fr; gap:4rem; align-items:center; }
+  .pastor-photo-wrap { position:relative; display:flex; justify-content:center; }
+  .pastor-card-frame { width:280px; height:340px; background:linear-gradient(160deg,var(--purple-bg),var(--border)); border-radius:8px; border:3px solid var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.8rem; box-shadow:0 8px 32px rgba(91,31,162,.12); }
+  .pastor-card-frame .pico { font-size:5rem; opacity:.35; }
+  .pastor-card-frame p { font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); text-align:center; }
+  .pastor-tag { position:absolute; bottom:-14px; left:50%; transform:translateX(-50%); background:var(--purple); color:#fff; font-family:'Montserrat',sans-serif; font-size:.65rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; padding:.4rem 1.4rem; border-radius:30px; white-space:nowrap; box-shadow:0 4px 16px rgba(91,31,162,.4); }
+  .pastor-info .eyebrow { font-family:'Montserrat',sans-serif; font-size:.68rem; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--red); margin-bottom:.5rem; }
+  .pastor-info h2 { font-family:'Playfair Display',serif; font-size:clamp(1.5rem,2.5vw,2.2rem); font-weight:900; color:var(--mtn); margin-bottom:1.5rem; line-height:1.15; }
+  .pastor-info h2 small { display:block; font-size:.45em; color:var(--muted); font-family:'Open Sans',sans-serif; font-weight:400; font-style:italic; }
+  .pastor-info p { color:#4A4465; line-height:1.9; margin-bottom:1rem; font-size:.95rem; }
+  .pastor-quote { background:var(--white); border-left:4px solid var(--purple); padding:1rem 1.5rem; margin-top:1.5rem; border-radius:0 4px 4px 0; }
+  .pastor-quote p { font-family:'Playfair Display',serif; font-style:italic; font-size:1rem; color:var(--purple-dk); margin:0; line-height:1.7; }
+  .pastor-quote cite { font-family:'Montserrat',sans-serif; font-size:.68rem; font-weight:700; letter-spacing:.12em; color:var(--red); font-style:normal; margin-top:.4rem; display:block; }
+
+  /* ── SERVICE TIMES ────────────────────────────── */
+  .services-bg { background:linear-gradient(135deg,var(--purple-dk) 0%,var(--mtn) 100%); }
+  .service-table { background:rgba(255,255,255,.06); border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.1); }
+  .svc-row { display:grid; grid-template-columns:160px 1fr 180px; padding:1.2rem 2rem; border-bottom:1px solid rgba(255,255,255,.07); transition:background .2s; }
+  .svc-row:last-child { border-bottom:none; }
+  .svc-row:hover { background:rgba(255,255,255,.05); }
+  .svc-row.hdr { background:rgba(255,255,255,.06); border-bottom:1px solid rgba(255,255,255,.15); }
+  .svc-row.hdr span { font-family:'Montserrat',sans-serif; font-size:.65rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:rgba(255,255,255,.5); }
+  .svc-row span { color:rgba(255,255,255,.85); font-size:.95rem; align-self:center; }
+  .svc-day { font-family:'Montserrat',sans-serif; font-weight:700; font-size:.82rem !important; color:var(--gold) !important; letter-spacing:.05em; text-transform:uppercase; }
+  .svc-time { font-family:'Montserrat',sans-serif; font-size:.82rem !important; color:rgba(255,255,255,.6) !important; }
+
+  /* ── PROGRAMMES ───────────────────────────────── */
+  .prog-bg { background:var(--white); }
+  .prog-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; }
+  .prog-card { background:var(--offwhite); border:1px solid var(--border); border-radius:8px; padding:2rem 1.8rem; transition:transform .3s,box-shadow .3s,border-color .3s; position:relative; overflow:hidden; }
+  .prog-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg,var(--purple),var(--red)); transform:scaleX(0); transition:transform .3s; transform-origin:left; }
+  .prog-card:hover { transform:translateY(-5px); box-shadow:0 12px 32px rgba(91,31,162,.12); border-color:var(--purple); }
+  .prog-card:hover::before { transform:scaleX(1); }
+  .prog-icon { font-size:2.2rem; margin-bottom:1rem; }
+  .prog-card h3 { font-family:'Montserrat',sans-serif; font-size:.9rem; font-weight:700; color:var(--purple); margin-bottom:.5rem; letter-spacing:.04em; text-transform:uppercase; }
+  .prog-card p { font-size:.88rem; color:var(--muted); line-height:1.7; }
+
+  /* ── GALLERY ──────────────────────────────────── */
+  .gallery-bg { background:var(--mtn); }
+  .gallery-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+  .g-item { position:relative; border-radius:6px; overflow:hidden; cursor:pointer; }
+  .g-item.tall { grid-row:span 2; }
+  .g-inner { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.75rem; height:100%; min-height:200px; padding:1.5rem; transition:border-color .3s; }
+  .g-item.tall .g-inner { min-height:420px; }
+  .g-ico { font-size:2.5rem; opacity:.4; }
+  .g-item.tall .g-ico { font-size:3.5rem; }
+  .g-lbl { font-family:'Montserrat',sans-serif; font-size:.62rem; letter-spacing:.15em; text-transform:uppercase; color:rgba(255,255,255,.4); text-align:center; }
+  .g-overlay { position:absolute; inset:0; background:linear-gradient(135deg,rgba(91,31,162,.7),rgba(204,0,0,.5)); opacity:0; transition:opacity .3s; display:flex; align-items:center; justify-content:center; }
+  .g-overlay span { font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.15em; color:#fff; border:2px solid rgba(255,255,255,.7); padding:.4rem 1.2rem; border-radius:3px; text-transform:uppercase; }
+  .g-item:hover .g-overlay { opacity:1; }
+  .g-item:hover .g-inner { border-color:rgba(91,31,162,.5); }
+  .gallery-note { text-align:center; margin-top:2rem; font-size:.83rem; color:rgba(255,255,255,.35); font-style:italic; }
+
+  /* ── LIGHTBOX ─────────────────────────────────── */
+  .lightbox { display:none; position:fixed; inset:0; background:rgba(13,13,26,.95); z-index:500; align-items:center; justify-content:center; }
+  .lightbox.open { display:flex; }
+  .lb-card { position:relative; max-width:560px; width:90%; background:var(--white); border-radius:8px; border-top:4px solid var(--purple); padding:2.5rem 2rem; text-align:center; box-shadow:0 24px 64px rgba(0,0,0,.6); }
+  .lb-close { position:absolute; top:.8rem; right:1rem; background:none; border:none; color:var(--muted); font-size:1.6rem; cursor:pointer; line-height:1; transition:color .2s; }
+  .lb-close:hover { color:var(--red); }
+  .lb-icon { font-size:3.5rem; margin-bottom:1rem; }
+  .lb-card h3 { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--mtn); margin-bottom:.75rem; }
+  .lb-card p { color:var(--muted); font-size:.9rem; line-height:1.7; }
+
+  /* ── FORMS ────────────────────────────────────── */
+  .forms-bg { background:var(--offwhite); border-top:1px solid var(--border); }
+  .forms-grid { display:grid; grid-template-columns:1fr 1fr; gap:2.5rem; }
+  .form-card { background:var(--white); border:1px solid var(--border); border-radius:8px; padding:2.5rem 2rem; box-shadow:0 4px 16px rgba(91,31,162,.06); }
+  .form-card-head { margin-bottom:1.5rem; }
+  .form-card-head h3 { font-family:'Montserrat',sans-serif; font-size:1rem; font-weight:700; color:var(--mtn); letter-spacing:.04em; }
+  .form-card-head .fsub { font-size:.85rem; color:var(--muted); margin-top:.4rem; line-height:1.6; }
+  .fgroup { margin-bottom:1.1rem; }
+  .fgroup label { display:block; font-family:'Montserrat',sans-serif; font-size:.65rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
+  .fgroup input,.fgroup textarea,.fgroup select { width:100%; background:var(--offwhite); border:1.5px solid var(--border); border-radius:4px; padding:.75rem 1rem; color:var(--text); font-family:'Open Sans',sans-serif; font-size:.9rem; outline:none; transition:border-color .3s,box-shadow .3s; }
+  .fgroup input:focus,.fgroup textarea:focus,.fgroup select:focus { border-color:var(--purple); box-shadow:0 0 0 3px rgba(91,31,162,.1); background:var(--white); }
+  .fgroup textarea { resize:vertical; min-height:110px; }
+  .fgroup select { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236B6680' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 1rem center; background-color:var(--offwhite); cursor:pointer; }
+  .prayer-checks { display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-top:.4rem; }
+  .pcheck { display:flex; align-items:center; gap:.5rem; cursor:pointer; }
+  .pcheck input[type=checkbox] { accent-color:var(--purple); width:15px; height:15px; cursor:pointer; flex-shrink:0; }
+  .pcheck span { font-size:.83rem; color:var(--text); }
+  .form-success { display:none; background:#F0FBF0; border:1.5px solid #4CAF50; border-radius:4px; padding:1rem 1.2rem; text-align:center; margin-top:1rem; }
+  .form-success p { font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:600; color:#2E7D32; }
+  .btn-form-purple { background:var(--purple); color:#fff; font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.85rem 2rem; border:none; cursor:pointer; border-radius:4px; width:100%; transition:background .2s; }
+  .btn-form-purple:hover { background:var(--purple-dk); }
+  .btn-form-red { background:var(--red); color:#fff; font-family:'Montserrat',sans-serif; font-size:.8rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.85rem 2rem; border:none; cursor:pointer; border-radius:4px; width:100%; transition:background .2s; }
+  .btn-form-red:hover { background:#A80000; }
+
+  /* ── LOCATION ─────────────────────────────────── */
+  .loc-bg { background:var(--white); }
+  .loc-grid { display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:start; }
+  .loc-info h4 { font-family:'Montserrat',sans-serif; font-size:.75rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:var(--purple); margin-bottom:.4rem; margin-top:1.5rem; }
+  .loc-info h4:first-child { margin-top:0; }
+  .loc-info p { color:var(--muted); font-size:.93rem; line-height:1.8; }
+  .loc-info a { color:var(--purple); text-decoration:none; }
+  .loc-info a:hover { color:var(--red); }
+  .map-box { background:var(--offwhite); border:2px solid var(--border); border-radius:8px; height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; padding:2rem; text-align:center; }
+  .map-box .mico { font-size:3rem; }
+  .map-box p { color:var(--muted); font-size:.85rem; line-height:1.6; }
+  .map-box a { font-family:'Montserrat',sans-serif; font-size:.75rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--white); background:var(--purple); padding:.5rem 1.4rem; border-radius:4px; text-decoration:none; transition:background .2s; }
+  .map-box a:hover { background:var(--purple-dk); }
+
+  /* ── CTA BANNER ───────────────────────────────── */
+  .cta-banner { background:linear-gradient(135deg,var(--red) 0%,#8B0000 100%); padding:4rem 2rem; text-align:center; }
+  .cta-banner h2 { font-family:'Playfair Display',serif; font-size:clamp(1.6rem,3vw,2.5rem); font-weight:900; color:#fff; margin-bottom:.8rem; }
+  .cta-banner p { font-size:1rem; color:rgba(255,255,255,.8); max-width:540px; margin:0 auto 2rem; line-height:1.7; }
+  .cta-banner .cta-btns { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+
+  /* ── DIVIDER ──────────────────────────────────── */
+  .divider { border:none; height:1px; background:var(--border); max-width:100%; margin:0; }
+
+  /* ── FOOTER ───────────────────────────────────── */
+  footer { background:var(--mtn); color:rgba(255,255,255,.7); }
+  .footer-top { max-width:1100px; margin:0 auto; padding:4rem 2rem 2rem; display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:3rem; }
+  .footer-brand .fb-logo { display:flex; align-items:center; gap:.8rem; margin-bottom:1rem; }
+  .footer-brand .fb-logo span { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:#fff; line-height:1.3; }
+  .footer-brand p { font-size:.85rem; line-height:1.8; }
+  .footer-col h5 { font-family:'Montserrat',sans-serif; font-size:.72rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:1rem; }
+  .footer-col ul { list-style:none; display:flex; flex-direction:column; gap:.6rem; }
+  .footer-col ul a { font-size:.85rem; color:rgba(255,255,255,.65); text-decoration:none; transition:color .2s; }
+  .footer-col ul a:hover { color:#fff; }
+  .footer-bottom { border-top:1px solid rgba(255,255,255,.08); text-align:center; padding:1.5rem 2rem; font-size:.78rem; color:rgba(255,255,255,.35); }
+  .footer-socials { display:flex; justify-content:center; gap:1.2rem; margin:1rem 0; }
+  .footer-socials a { font-size:1.3rem; text-decoration:none; transition:transform .2s opacity .2s; opacity:.6; }
+  .footer-socials a:hover { transform:scale(1.2); opacity:1; }
+  .purple-bar { height:5px; background:linear-gradient(90deg,var(--purple-dk),var(--purple),var(--red)); }
+
+  /* ── RESPONSIVE ───────────────────────────────── */
+  @media(max-width:1000px) { .forms-grid { grid-template-columns:1fr; } .pastor-grid { grid-template-columns:1fr; } .pastor-photo-wrap { margin-bottom:3rem; } .footer-top { grid-template-columns:1fr 1fr; } }
+  @media(max-width:768px) {
+    .nav-links,.nav-cta { display:none; }
+    .hamburger { display:flex; }
+    .stats-strip { grid-template-columns:1fr 1fr; }
+    .about-grid,.loc-grid { grid-template-columns:1fr; }
+    .about-pillars { grid-template-columns:1fr; }
+    .gallery-grid { grid-template-columns:1fr 1fr; }
+    .g-item.tall { grid-row:span 1; }
+    .g-item.tall .g-inner { min-height:200px; }
+    .svc-row { grid-template-columns:1fr; gap:.15rem; padding:1rem 1.5rem; }
+    .svc-row.hdr { display:none; }
+    .footer-top { grid-template-columns:1fr; }
+  }
+  @media(max-width:480px) {
+    .gallery-grid { grid-template-columns:1fr; }
+    .hero-btns { flex-direction:column; align-items:center; }
+    .stats-strip { grid-template-columns:1fr 1fr; }
+    .prayer-checks { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <span>📍 SW 58 Araromi, Akure, Ondo State, Nigeria</span>
+  <span>🌐 <a href="https://www.mfm.org.ng" target="_blank">mfm.org.ng</a> &nbsp;|&nbsp; 🔥 Sunday Service: 7:00 AM</span>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#home">
+      <div class="logo-emblem">
+        <!-- MFM Mountain SVG symbol in circle -->
+        <svg width="34" height="26" viewBox="0 0 34 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="17,2 28,22 6,22" fill="none" stroke="white" stroke-width="2.2" stroke-linejoin="round"/>
+          <polygon points="8,22 15,10 22,22" fill="white" opacity="0.7"/>
+          <line x1="6" y1="22" x2="28" y2="22" stroke="white" stroke-width="2.2"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <div class="l1">Mountain of Fire &amp; Miracles</div>
+        <div class="l2">Araromi Assembly · Akure, Ondo State</div>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#pastor">Pastor</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#programmes">Programmes</a></li>
+      <li><a href="#gallery">Gallery</a></li>
+      <li><a href="#prayer">Prayer</a></li>
+      <li><a href="#location">Find Us</a></li>
+    </ul>
+    <a href="#contact" class="nav-cta">Contact Us</a>
+    <button class="hamburger" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" onclick="closeMenu()">✕</button>
+  <a href="#about" onclick="closeMenu()">About</a>
+  <a href="#pastor" onclick="closeMenu()">Our Pastor</a>
+  <a href="#services" onclick="closeMenu()">Service Times</a>
+  <a href="#programmes" onclick="closeMenu()">Programmes</a>
+  <a href="#gallery" onclick="closeMenu()">Gallery</a>
+  <a href="#prayer" onclick="closeMenu()">Prayer Request</a>
+  <a href="#contact" onclick="closeMenu()">Contact Us</a>
+  <a href="#location" onclick="closeMenu()">Find Us</a>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <!-- Mountain silhouette background -->
+  <div class="hero-mountain-bg">
+    <svg viewBox="0 0 1440 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <polygon points="0,300 200,300 720,40 1240,300 1440,300" fill="white"/>
+      <polygon points="0,300 400,300 700,100 900,200 1100,300 1440,300" fill="white" opacity="0.4"/>
+    </svg>
+  </div>
+  <div class="hero-badge">🔥 The Burning Church — Akure, Ondo State</div>
+  <h1>Mountain of Fire<br>&amp; <span>Miracles Ministries</span></h1>
+  <div class="hero-location">SW 58 Araromi · Akure · Ondo State · Nigeria</div>
+  <p class="hero-tagline">A Holy Ghost–filled, prayer-aggressive, end-time warfare church committed to total deliverance, signs, wonders, and the unlimited demonstration of God's power.</p>
+  <div class="hero-btns">
+    <a href="#services" class="btn-red">Join Us This Sunday</a>
+    <a href="#prayer" class="btn-outline-white">Submit Prayer Request</a>
+  </div>
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats-strip">
+  <div class="stat-item">
+    <div class="stat-num">7AM</div>
+    <div class="stat-lbl">Sunday Service</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">24/7</div>
+    <div class="stat-lbl">Prayer Coverage</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">6</div>
+    <div class="stat-lbl">Weekly Programmes</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">MFM</div>
+    <div class="stat-lbl">Global Network</div>
+  </div>
+</div>
+
+<!-- SCRIPTURE BAND -->
+<div class="scripture-band">
+  <blockquote>"For our God is a consuming fire." <cite>— Hebrews 12:29</cite></blockquote>
+</div>
+
+<!-- ABOUT -->
+<div class="about-bg" id="about">
+  <div class="section-wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">Who We Are</div>
+      <h2 class="section-title">About Our Assembly</h2>
+      <div class="section-divider"></div>
+    </div>
+    <div class="about-grid">
+      <div class="about-text">
+        <p>Mountain of Fire and Miracles Ministries (MFM) is a Holy Ghost–filled, prayer-focused church committed to the total liberation of men and women from every form of bondage, sickness, and oppression of the enemy.</p>
+        <p>Our assembly at SW 58 Araromi, Akure is part of the global MFM family founded by Dr. D.K. Olukoya. We believe in the power of fervent prayer, the authority of God's Word, and the reality of miracles in today's world.</p>
+        <p>We welcome everyone — seekers, believers, and families — to come and experience the fire of God. No matter where you are in your spiritual journey, there is a place for you at MFM Araromi.</p>
+        <div class="about-pillars">
+          <div class="pillar"><span class="pillar-icon">📖</span><div class="pillar-text"><h4>The Word</h4><p>Rooted in Scripture, powered by the Holy Ghost</p></div></div>
+          <div class="pillar"><span class="pillar-icon">🙏</span><div class="pillar-text"><h4>Prayer</h4><p>Aggressive intercession and spiritual warfare</p></div></div>
+          <div class="pillar"><span class="pillar-icon">⚡</span><div class="pillar-text"><h4>Deliverance</h4><p>Setting captives free by God's mighty power</p></div></div>
+          <div class="pillar"><span class="pillar-icon">✨</span><div class="pillar-text"><h4>Miracles</h4><p>Signs and wonders confirming the Gospel</p></div></div>
+        </div>
+      </div>
+      <div class="about-visual">
+        <div class="about-box">
+          <h3>Our Identity in God</h3>
+          <div class="about-stat-row"><span class="aicon">🔥</span><div><div class="alabel">Ministry Focus</div><div class="aval">Prayer &amp; Deliverance</div></div></div>
+          <div class="about-stat-row"><span class="aicon">👑</span><div><div class="alabel">Our Purple</div><div class="aval">Royal Priesthood (1 Pet. 2:9)</div></div></div>
+          <div class="about-stat-row"><span class="aicon">⛰️</span><div><div class="alabel">Our Mountain</div><div class="aval">God's Mightiness &amp; Supremacy</div></div></div>
+          <div class="about-stat-row"><span class="aicon">☁️</span><div><div class="alabel">Our White</div><div class="aval">Holiness Within &amp; Without</div></div></div>
+          <div class="about-stat-row"><span class="aicon">🌍</span><div><div class="alabel">Global Network</div><div class="aval">MFM Worldwide — Dr. D.K. Olukoya</div></div></div>
+        </div>
+        <div class="about-accent">🔥</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- PASTOR -->
+<div class="pastor-bg" id="pastor">
+  <div class="section-wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">Spiritual Leadership</div>
+      <h2 class="section-title">Meet Our Pastor</h2>
+      <div class="section-divider"></div>
+    </div>
+    <div class="pastor-grid">
+      <div class="pastor-photo-wrap">
+        <div class="pastor-card-frame">
+          <div class="pico">👤</div>
+          <p>Pastor's Photo<br>Coming Soon</p>
+        </div>
+        <div class="pastor-tag">Senior Pastor</div>
+      </div>
+      <div class="pastor-info">
+        <div class="eyebrow">MFM Araromi Assembly · Akure, Ondo State</div>
+        <h2>Pastor [Your Pastor's Name]
+          <small>Update with actual name</small>
+        </h2>
+        <p>Our Senior Pastor leads this assembly with passion, prayer, and unwavering commitment to the Word of God. Called and anointed by the Holy Spirit, he shepherds the congregation of MFM SW 58 Araromi with a heart for souls, a fire for prayer, and a vision for transformation in Akure and beyond.</p>
+        <p>Under his leadership, the assembly has witnessed remarkable testimonies of healings, deliverance, and breakthrough — testifying to the faithfulness of God. His ministry is grounded in holiness, discipleship, and aggressive intercession.</p>
+        <p>He is a vessel of honour, set apart for the Master's use — and a father to many in the faith across Ondo State and the wider MFM family.</p>
+        <div class="pastor-quote">
+          <p>"The effective, fervent prayer of a righteous man avails much."</p>
+          <cite>— James 5:16</cite>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SERVICE TIMES -->
+<div class="services-bg" id="services">
+  <div class="section-wrap">
+    <div class="section-head">
+      <div class="section-eyebrow" style="color:rgba(255,255,255,.6)">Come &amp; Worship With Us</div>
+      <h2 class="section-title light">Service Times</h2>
+      <div class="section-divider"></div>
+    </div>
+    <div class="service-table">
+      <div class="svc-row hdr"><span>Day</span><span>Programme</span><span>Time</span></div>
+      <div class="svc-row"><span class="svc-day">Every Day</span><span>Morning Devotion &amp; Prayer</span><span class="svc-time">5:30 AM – 6:30 AM</span></div>
+      <div class="svc-row"><span class="svc-day">Sunday</span><span>Sunday Service</span><span class="svc-time">7:00 AM – 10:00 AM</span></div>
+      <div class="svc-row"><span class="svc-day">Tuesday</span><span>Power Must Change Hands</span><span class="svc-time">6:00 PM – 8:00 PM</span></div>
+      <div class="svc-row"><span class="svc-day">Wednesday</span><span>Midweek Holy Ghost Service</span><span class="svc-time">6:00 PM – 8:00 PM</span></div>
+      <div class="svc-row"><span class="svc-day">Friday</span><span>Prayer Rain (All-Night)</span><span class="svc-time">10:00 PM – 3:00 AM</span></div>
+      <div class="svc-row"><span class="svc-day">Last Saturday</span><span>Mountain Top Life (Men's Programme)</span><span class="svc-time">8:00 AM – 10:00 AM</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRAMMES -->
+<div class="prog-bg" id="programmes">
+  <div class="section-wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">Units &amp; Fellowships</div>
+      <h2 class="section-title">Our Programmes</h2>
+      <div class="section-divider"></div>
+    </div>
+    <div class="prog-grid">
+      <div class="prog-card"><div class="prog-icon">🔥</div><h3>Prayer Warriors</h3><p>Intercessors trained in spiritual warfare, covering the assembly and community in fervent prayer battles daily and weekly.</p></div>
+      <div class="prog-card"><div class="prog-icon">🌱</div><h3>Children's Unit</h3><p>Age-appropriate Sunday School classes, teaching the children the Word of God in an engaging and Spirit-filled environment.</p></div>
+      <div class="prog-card"><div class="prog-icon">🎶</div><h3>Music &amp; Choir</h3><p>Anointed worship leading the congregation into the presence of God and setting the atmosphere for miracles and breakthroughs.</p></div>
+      <div class="prog-card"><div class="prog-icon">👩‍👧</div><h3>Women's Fellowship</h3><p>A supportive and spiritually empowering community for women, fostering faith, sisterhood, and growth in God's Word.</p></div>
+      <div class="prog-card"><div class="prog-icon">👨‍💼</div><h3>Men's Fellowship</h3><p>Raising godly men committed to faith, family, and community — strong in prayer and grounded in the Scriptures.</p></div>
+      <div class="prog-card"><div class="prog-icon">⚡</div><h3>Youth &amp; Young Adults</h3><p>Vibrant, Spirit-filled programmes equipping the next generation with faith, purpose, and the fire of the Holy Ghost.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- GALLERY -->
+<div class="gallery-bg" id="gallery">
+  <div class="section-wrap">
+    <div class="section-head">
+      <div class="section-eyebrow" style="color:rgba(255,255,255,.55)">Life at MFM Araromi</div>
+      <h2 class="section-title light">Gallery</h2>
+      <div class="section-divider"></div>
+    </div>
+    <div class="gallery-grid">
+      <div class="g-item tall" onclick="openLb('worship')">
+        <div class="g-inner"><div class="g-ico">🙌</div><div class="g-lbl">Sunday Worship Service</div></div>
+        <div class="g-overlay"><span>View</span></div>
+      </div>
+      <div class="g-item" onclick="openLb('prayer')">
+        <div class="g-inner"><div class="g-ico">🙏</div><div class="g-lbl">Prayer Rain</div></div>
+        <div class="g-overlay"><span>View</span></div>
+      </div>
+      <div class="g-item" onclick="openLb('youth')">
+        <div class="g-inner"><div class="g-ico">⚡</div><div class="g-lbl">Youth Programme</div></div>
+        <div class="g-overlay"><span>View</span></div>
+      </div>
+      <div class="g-item" onclick="openLb('children')">
+        <div class="g-inner"><div class="g-ico">🌱</div><div class="g-lbl">Children's Sunday School</div></div>
+        <div class="g-overlay"><span>View</span></div>
+      </div>
+      <div class="g-item" onclick="openLb('outreach')">
+        <div class="g-inner"><div class="g-ico">🌍</div><div class="g-lbl">Community Outreach</div></div>
+        <div class="g-overlay"><span>View</span></div>
+      </div>
+      <div class="g-item" onclick="openLb('deliverance')">
+        <div class="g-inner"><div class="g-ico">🔥</div><div class="g-lbl">Deliverance Service</div></div>
+        <div class="g-overlay"><span>View</span></div>
+      </div>
+    </div>
+    <p class="gallery-note">📸 Replace placeholders with actual church photos to bring this gallery to life.</p>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLbBg(event)">
+  <div class="lb-card">
+    <button class="lb-close" onclick="closeLb()">✕</button>
+    <div class="lb-icon" id="lb-icon">🙌</div>
+    <h3 id="lb-title">Title</h3>
+    <p id="lb-desc">Description</p>
+  </div>
+</div>
+
+<!-- FORMS: PRAYER REQUEST + CONTACT -->
+<div class="forms-bg">
+  <div class="section-wrap" id="forms">
+    <div class="section-head">
+      <div class="section-eyebrow">Reach Out To Us</div>
+      <h2 class="section-title">Prayer &amp; Contact</h2>
+      <div class="section-divider"></div>
+      <p class="section-sub">Whether you need prayer, pastoral support, or just want to connect — we are here for you.</p>
+    </div>
+    <div class="forms-grid">
+
+      <!-- PRAYER REQUEST -->
+      <div class="form-card" id="prayer">
+        <div class="form-card-head">
+          <h3>🙏 Submit a Prayer Request</h3>
+          <p class="fsub">Your request is confidential. Our prayer team will intercede on your behalf with fervency and faith. God still answers prayer!</p>
+        </div>
+        <form id="prayerForm" onsubmit="submitForm(event,'prayerForm','prayerOK')">
+          <div class="fgroup"><label>Full Name</label><input type="text" placeholder="Enter your name" required></div>
+          <div class="fgroup"><label>Phone Number</label><input type="tel" placeholder="+234 000 000 0000"></div>
+          <div class="fgroup">
+            <label>Prayer Category (select all that apply)</label>
+            <div class="prayer-checks">
+              <label class="pcheck"><input type="checkbox"><span>Healing</span></label>
+              <label class="pcheck"><input type="checkbox"><span>Deliverance</span></label>
+              <label class="pcheck"><input type="checkbox"><span>Financial Breakthrough</span></label>
+              <label class="pcheck"><input type="checkbox"><span>Marriage &amp; Family</span></label>
+              <label class="pcheck"><input type="checkbox"><span>Business &amp; Career</span></label>
+              <label class="pcheck"><input type="checkbox"><span>Salvation</span></label>
+              <label class="pcheck"><input type="checkbox"><span>Protection</span></label>
+              <label class="pcheck"><input type="checkbox"><span>Other</span></label>
+            </div>
+          </div>
+          <div class="fgroup"><label>Prayer Request Details</label><textarea placeholder="Share your prayer request here. Be as detailed as you'd like — our prayer team will intercede with you..." required></textarea></div>
+          <button type="submit" class="btn-form-purple">🔥 Submit Prayer Request</button>
+          <div class="form-success" id="prayerOK"><p>🙏 Received! Our prayer warriors will intercede for you. God is faithful!</p></div>
+        </form>
+      </div>
+
+      <!-- CONTACT FORM -->
+      <div class="form-card" id="contact">
+        <div class="form-card-head">
+          <h3>✉️ Contact Us</h3>
+          <p class="fsub">Have a question, need pastoral support, or want to find out more about MFM Araromi? We'd love to hear from you.</p>
+        </div>
+        <form id="contactForm" onsubmit="submitForm(event,'contactForm','contactOK')">
+          <div class="fgroup"><label>Full Name</label><input type="text" placeholder="Your full name" required></div>
+          <div class="fgroup"><label>Email Address</label><input type="email" placeholder="your@email.com" required></div>
+          <div class="fgroup"><label>Phone Number</label><input type="tel" placeholder="+234 000 000 0000"></div>
+          <div class="fgroup">
+            <label>Subject</label>
+            <select>
+              <option value="">— Select a subject —</option>
+              <option>General Enquiry</option>
+              <option>Pastoral Support &amp; Counselling</option>
+              <option>New Member / First Timer</option>
+              <option>Marriage &amp; Family Support</option>
+              <option>Event / Partnership</option>
+              <option>Testimonies</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="fgroup"><label>Your Message</label><textarea placeholder="Write your message here..." required></textarea></div>
+          <button type="submit" class="btn-form-red">📨 Send Message</button>
+          <div class="form-success" id="contactOK"><p>✅ Message received! We'll respond shortly. God bless you abundantly!</p></div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- CTA BANNER -->
+<div class="cta-banner">
+  <h2>You Are Welcome Here</h2>
+  <p>Whether you are new to faith or have been walking with God for years — there is a family here for you. Join us this Sunday and experience the fire of God.</p>
+  <div class="cta-btns">
+    <a href="#location" class="btn-outline-white">Get Directions</a>
+    <a href="#prayer" class="btn-purple" style="background:#fff;color:var(--purple);">Send a Prayer Request</a>
+  </div>
+</div>
+
+<!-- LOCATION -->
+<div class="loc-bg" id="location">
+  <div class="section-wrap">
+    <div class="section-head">
+      <div class="section-eyebrow">We'd Love to See You</div>
+      <h2 class="section-title">Find Us</h2>
+      <div class="section-divider"></div>
+    </div>
+    <div class="loc-grid">
+      <div class="loc-info">
+        <h4>📍 Our Address</h4>
+        <p>SW 58 Araromi<br>Akure, Ondo State<br>Nigeria</p>
+
+        <h4>📞 Contact the Church</h4>
+        <p>Reach the church office for enquiries, prayer support, or to confirm programme times. We are always glad to welcome you.</p>
+
+        <h4>🌐 Global Headquarters</h4>
+        <p>Mountain of Fire and Miracles Ministries<br>International HQ, Lagos, Nigeria<br>
+          <a href="https://www.mfm.org.ng" target="_blank">www.mfm.org.ng</a>
+        </p>
+
+        <h4>🕐 Office Hours</h4>
+        <p>Monday – Friday: 9:00 AM – 5:00 PM<br>Saturday: 10:00 AM – 2:00 PM<br>Sunday: Open for all services</p>
+        <br>
+        <a href="https://maps.google.com/?q=Mountain+of+Fire+Miracles+Ministries+SW+58+Araromi+Akure+Ondo+State+Nigeria" target="_blank" class="btn-purple">📍 Open in Google Maps</a>
+      </div>
+      <div class="map-box">
+        <div class="mico">🗺️</div>
+        <p><strong>Mountain of Fire &amp; Miracles Ministries</strong><br>SW 58 Araromi, Akure<br>Ondo State, Nigeria</p>
+        <a href="https://maps.google.com/?q=Mountain+of+Fire+Miracles+Ministries+SW+58+Araromi+Akure+Ondo" target="_blank">📍 Get Directions</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="purple-bar"></div>
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="fb-logo">
+        <div class="logo-emblem" style="width:42px;height:42px;">
+          <svg width="26" height="20" viewBox="0 0 34 26" fill="none"><polygon points="17,2 28,22 6,22" fill="none" stroke="white" stroke-width="2.2" stroke-linejoin="round"/><polygon points="8,22 15,10 22,22" fill="white" opacity="0.7"/><line x1="6" y1="22" x2="28" y2="22" stroke="white" stroke-width="2.2"/></svg>
+        </div>
+        <span>Mountain of Fire<br>&amp; Miracles Ministries</span>
+      </div>
+      <p>Araromi Assembly · SW 58 Araromi, Akure, Ondo State, Nigeria. An arm of the global MFM family founded by Dr. D.K. Olukoya.</p>
+      <div class="footer-socials" style="justify-content:flex-start;margin-top:1rem;">
+        <a href="https://www.mfm.org.ng" target="_blank" title="MFM Website">🌐</a>
+        <a href="https://www.facebook.com/mfmnigeria" target="_blank" title="Facebook">📘</a>
+        <a href="https://www.youtube.com/@mountainoffire" target="_blank" title="YouTube">▶️</a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h5>Quick Links</h5>
+      <ul>
+        <li><a href="#about">About Us</a></li>
+        <li><a href="#pastor">Our Pastor</a></li>
+        <li><a href="#services">Service Times</a></li>
+        <li><a href="#programmes">Programmes</a></li>
+        <li><a href="#gallery">Gallery</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h5>Connect</h5>
+      <ul>
+        <li><a href="#prayer">Prayer Request</a></li>
+        <li><a href="#contact">Contact Us</a></li>
+        <li><a href="#location">Find Us</a></li>
+        <li><a href="https://www.mfm.org.ng" target="_blank">MFM International HQ</a></li>
+        <li><a href="https://www.mfm.org.ng/daily-devotional" target="_blank">Daily Devotional</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © 2025 Mountain of Fire and Miracles Ministries – SW 58 Araromi, Akure, Ondo State. All rights reserved.
+  </div>
+</footer>
+
+<script>
+  // MOBILE MENU
+  function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('open'); document.body.style.overflow = document.getElementById('mobileMenu').classList.contains('open') ? 'hidden' : ''; }
+  function closeMenu(){ document.getElementById('mobileMenu').classList.remove('open'); document.body.style.overflow = ''; }
+
+  // FORM SUBMIT
+  function submitForm(e, formId, okId){
+    e.preventDefault();
+    const el = document.getElementById(okId);
+    el.style.display = 'block';
+    setTimeout(()=>{ el.style.display='none'; document.getElementById(formId).reset(); }, 5500);
+  }
+
+  // GALLERY LIGHTBOX
+  const lbData = {
+    worship:    { icon:'🙌', title:'Sunday Worship Service',       desc:'Our Sunday services are filled with powerful worship, anointed preaching, and the move of the Holy Spirit. Join us every Sunday from 7:00 AM.' },
+    prayer:     { icon:'🙏', title:'Prayer Rain (All-Night)',       desc:'Every Friday night, the assembly gathers from 10 PM to 3 AM for aggressive prayer warfare. This is where chains are broken and destinies are unlocked.' },
+    youth:      { icon:'⚡', title:'Youth Programme',              desc:'Our youth meetings are vibrant, Spirit-filled, and designed to equip young people with faith, purpose, and the fire of God.' },
+    children:   { icon:'🌱', title:"Children's Sunday School",     desc:'We raise godly children through age-appropriate Bible teachings, songs, and interactive sessions every Sunday.' },
+    outreach:   { icon:'🌍', title:'Community Outreach',           desc:'Taking the love and power of God beyond the church walls — reaching Akure and beyond with the Gospel, healing, and compassion.' },
+    deliverance:{ icon:'🔥', title:'Deliverance Service',          desc:'God is still in the business of setting captives free. Our sessions have produced countless testimonies of liberation, healing, and restoration.' },
+  };
+  function openLb(key){
+    const d=lbData[key];
+    document.getElementById('lb-icon').textContent=d.icon;
+    document.getElementById('lb-title').textContent=d.title;
+    document.getElementById('lb-desc').textContent=d.desc;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow='hidden';
+  }
+  function closeLb(){
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow='';
+  }
+  function closeLbBg(e){ if(e.target===document.getElementById('lightbox')) closeLb(); }
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLb(); });
+</script>
+</body>
+</html>
