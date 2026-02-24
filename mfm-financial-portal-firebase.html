@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MFM Financial Portal – Akure Region</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+<!-- ══ FIREBASE SDK ══════════════════════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc,
+         query, where, orderBy, onSnapshot, serverTimestamp, Timestamp }
+        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ══════════════════════════════════════════════════
+//  🔥 FIREBASE CONFIGURATION
+//  Replace the values below with your own Firebase
+//  project credentials from console.firebase.google.com
+// ══════════════════════════════════════════════════
+const firebaseConfig = {
+    apiKey: "AIzaSyABnQZoWvm5YWGgi7H1J1Xw_I0cY4NM3ms",
+    authDomain: "mfmsw58.firebaseapp.com",
+    projectId: "mfmsw58",
+    storageBucket: "mfmsw58.firebasestorage.app",
+    messagingSenderId: "14538297927",
+    appId: "1:14538297927:web:8297943c352fe377add762",
+    measurementId: "G-C0DDPPK9V0"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+// ══ BRANCH CONFIG ════════════════════════════════
+const BRANCHES = {
+  "hq@mfmararomi.org":      { id:"HQ", name:"Regional HQ — SW 58 Araromi", short:"Main Assembly",  role:"accountant" },
+  "okeijebu@mfmararomi.org":{ id:"B1", name:"MFM Oke-Ijebu Assembly",       short:"Oke-Ijebu",      role:"accountant" },
+  "ijoka@mfmararomi.org":   { id:"B2", name:"MFM Ijoka Assembly",            short:"Ijoka",          role:"accountant" },
+  "shagari@mfmararomi.org": { id:"B3", name:"MFM Shagari Assembly",          short:"Shagari",        role:"accountant" },
+  "aswani@mfmararomi.org":  { id:"B4", name:"MFM Aswani Assembly",           short:"Aswani",         role:"accountant" },
+  "obaile@mfmararomi.org":  { id:"B5", name:"MFM Oba-Ile Assembly",          short:"Oba-Ile",        role:"accountant" },
+  "ijapo@mfmararomi.org":   { id:"B6", name:"MFM Ijapo Assembly",            short:"Ijapo",          role:"accountant" },
+  "admin@mfmararomi.org":   { id:"ADMIN", name:"Regional Administrator",     short:"All Branches",   role:"admin" },
+};
+
+const ALL_BRANCH_IDS = ["HQ","B1","B2","B3","B4","B5","B6"];
+const BRANCH_BY_ID   = Object.fromEntries(Object.values(BRANCHES).map(b=>[b.id,b]));
+
+let currentUser   = null;
+let currentBranch = null;
+let unsubscribe   = null;
+let barChartInst=null, doughnutInst=null, rLineInst=null, rPieInst=null;
+
+// ══ AUTH STATE ════════════════════════════════════
+onAuthStateChanged(auth, async user => {
+  if(user){
+    const bInfo = BRANCHES[user.email];
+    if(!bInfo){ await signOut(auth); showLoginErr("Account not recognised."); return; }
+    currentUser   = user;
+    currentBranch = bInfo;
+    startApp();
+  } else {
+    currentUser = null; currentBranch = null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+  }
+});
+
+// ══ LOGIN ═════════════════════════════════════════
+window.doLogin = async function(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+  if(!email||!pass){ showLoginErr("Please enter email and password."); return; }
+  btn.textContent="Signing in…"; btn.disabled=true;
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e){
+    showLoginErr("Invalid email or password. Please try again.");
+    btn.textContent="Login to Portal"; btn.disabled=false;
+  }
+};
+
+window.doLogout = async function(){
+  if(unsubscribe) unsubscribe();
+  await signOut(auth);
+};
+
+function showLoginErr(msg){
+  const el=document.getElementById('loginErr');
+  el.textContent=msg; el.style.display='block';
+}
+
+// ══ APP INIT ══════════════════════════════════════
+function startApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  const b = currentBranch;
+  document.getElementById('sb-branch-name').textContent = b.name;
+  document.getElementById('sb-branch-loc').textContent  = b.short;
+  document.getElementById('sb-user-name').textContent   = currentUser.email.split('@')[0].toUpperCase();
+  document.getElementById('sb-user-role').textContent   = b.role==='admin'?'Regional Administrator':'Branch Accountant';
+  document.getElementById('tb-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+  const today = new Date().toISOString().split('T')[0];
+  const monthNow = today.slice(0,7);
+  ['i-date','e-date'].forEach(id=>document.getElementById(id).value=today);
+  ['r-month','reg-month'].forEach(id=>document.getElementById(id).value=monthNow);
+  document.getElementById('income-month-label').textContent = new Date().toLocaleString('default',{month:'long',year:'numeric'});
+  document.getElementById('exp-month-label').textContent    = new Date().toLocaleString('default',{month:'long',year:'numeric'});
+  if(b.role==='admin') document.getElementById('sb-regional').style.display='flex';
+  loadDashboard();
+}
+
+// ══ NAVIGATION ════════════════════════════════════
+window.showPage = async function(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const titles={dashboard:'Dashboard',income:'Record Income',expenditure:'Record Expenditure',transactions:'All Transactions',reports:'Branch Financial Report',regional:'Regional Overview'};
+  document.getElementById('page-title').textContent=titles[id]||id;
+  if(id==='dashboard')    loadDashboard();
+  if(id==='income')       loadIncomeList();
+  if(id==='expenditure')  loadExpList();
+  if(id==='transactions') loadAllTx();
+  if(id==='reports')      buildReport();
+  if(id==='regional')     buildRegional();
+};
+
+// ══ FIRESTORE HELPERS ═════════════════════════════
+async function getTxns(branchId){
+  const col = collection(db,'transactions');
+  let q;
+  if(!branchId || branchId==='ADMIN'){
+    q = query(col, orderBy('date','desc'));
+  } else {
+    q = query(col, where('branch','==',branchId), orderBy('date','desc'));
+  }
+  const snap = await getDocs(q);
+  return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+
+async function addTxn(data){
+  await addDoc(collection(db,'transactions'),{...data, createdAt:serverTimestamp()});
+}
+
+async function deleteTxn(id){
+  await deleteDoc(doc(db,'transactions',id));
+}
+
+// ══ DASHBOARD ═════════════════════════════════════
+async function loadDashboard(){
+  const branch = currentBranch.role==='admin' ? null : currentBranch.id;
+  const txns   = await getTxns(branch);
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const monthTx   = txns.filter(t=>t.date&&t.date.startsWith(thisMonth));
+  const totalInc  = monthTx.filter(t=>t.flow==='income').reduce((s,t)=>s+Number(t.amount),0);
+  const totalExp  = monthTx.filter(t=>t.flow==='expenditure').reduce((s,t)=>s+Number(t.amount),0);
+  const net       = totalInc-totalExp;
+
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card purple"><div class="stat-icon">💰</div><div class="stat-label">This Month's Income</div><div class="stat-value purple">₦${fmt(totalInc)}</div><div class="stat-sub">All income types</div></div>
+    <div class="stat-card red"><div class="stat-icon">💸</div><div class="stat-label">This Month's Expenditure</div><div class="stat-value red">₦${fmt(totalExp)}</div><div class="stat-sub">All expense types</div></div>
+    <div class="stat-card ${net>=0?'green':'red'}"><div class="stat-icon">${net>=0?'✅':'⚠️'}</div><div class="stat-label">Net Balance (Month)</div><div class="stat-value ${net>=0?'green':'red'}">₦${fmt(net)}</div><div class="stat-sub">${net>=0?'Surplus':'Deficit'}</div></div>
+    <div class="stat-card gold"><div class="stat-icon">📋</div><div class="stat-label">Records This Month</div><div class="stat-value gold">${monthTx.length}</div><div class="stat-sub">Total entries</div></div>
+  `;
+
+  // Bar chart - last 6 months
+  const months = getLast6Months();
+  const barInc = months.map(m=>txns.filter(t=>t.flow==='income'&&t.date&&t.date.startsWith(m)).reduce((s,t)=>s+Number(t.amount),0));
+  const barExp = months.map(m=>txns.filter(t=>t.flow==='expenditure'&&t.date&&t.date.startsWith(m)).reduce((s,t)=>s+Number(t.amount),0));
+  const barLabels = months.map(m=>{const[y,mo]=m.split('-');return new Date(y,mo-1).toLocaleString('default',{month:'short',year:'2-digit'});});
+  destroyChart(barChartInst);
+  barChartInst=new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:barLabels,datasets:[
+    {label:'Income',data:barInc,backgroundColor:'rgba(91,31,162,.75)',borderColor:'#5B1FA2',borderWidth:1.5,borderRadius:4},
+    {label:'Expenditure',data:barExp,backgroundColor:'rgba(204,0,0,.65)',borderColor:'#CC0000',borderWidth:1.5,borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{family:'Montserrat',size:11},boxWidth:12}}},scales:{y:{ticks:{callback:v=>'₦'+fmtShort(v),font:{family:'Montserrat',size:10}},grid:{color:'rgba(0,0,0,.06)'}},x:{ticks:{font:{family:'Montserrat',size:10}}}}}});
+
+  // Doughnut
+  const cats={tithe:0,offering:0,donation:0,vow:0,thanksgiving:0,other:0};
+  monthTx.filter(t=>t.flow==='income').forEach(t=>{
+    if(t.type==='tithe') cats.tithe+=Number(t.amount);
+    else if(t.type&&t.type.startsWith('offering')) cats.offering+=Number(t.amount);
+    else if(t.type==='donation') cats.donation+=Number(t.amount);
+    else if(t.type==='vow') cats.vow+=Number(t.amount);
+    else if(t.type==='thanksgiving') cats.thanksgiving+=Number(t.amount);
+    else cats.other+=Number(t.amount);
+  });
+  destroyChart(doughnutInst);
+  doughnutInst=new Chart(document.getElementById('doughnutChart'),{type:'doughnut',data:{
+    labels:['Tithe','Offering','Donation','Vow','Thanksgiving','Other'],
+    datasets:[{data:Object.values(cats),backgroundColor:['#5B1FA2','#C9940A','#2563EB','#EC4899','#16A34A','#9CA3AF'],borderWidth:2,borderColor:'#fff'}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Montserrat',size:10},boxWidth:12,padding:10}}}}});
+
+  // Recent
+  const recent = txns.slice(0,12);
+  document.getElementById('recent-tbody').innerHTML = recent.length ? recent.map(t=>`<tr>
+    <td>${t.date||'—'}</td>
+    <td style="font-size:.75rem;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--purple);">${BRANCH_BY_ID[t.branch]?.short||t.branch}</td>
+    <td><span class="badge ${t.flow}">${t.flow==='income'?'Income':'Expenditure'}</span></td>
+    <td><span class="badge ${getCatClass(t.type)}">${fmtType(t.type)}</span></td>
+    <td>${t.desc||'—'}</td>
+    <td style="font-family:'Montserrat',sans-serif;font-weight:700;color:${t.flow==='income'?'var(--green)':'var(--red)'};">${t.flow==='income'?'+':'-'}₦${fmt(Number(t.amount))}</td>
+  </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No transactions yet. Start by recording income or expenditure.</td></tr>';
+}
+
+// ══ INCOME ════════════════════════════════════════
+window.saveIncome = async function(){
+  const date=document.getElementById('i-date').value;
+  const type=document.getElementById('i-type').value;
+  const amount=parseFloat(document.getElementById('i-amount').value);
+  if(!date||!type||!amount||amount<=0){ showAlert('income-err'); return; }
+  const btn=document.getElementById('income-save-btn');
+  btn.textContent='Saving…'; btn.disabled=true;
+  try {
+    await addTxn({
+      branch:currentBranch.id, flow:'income', type, amount,
+      date, receiver:document.getElementById('i-receiver').value||'',
+      event:document.getElementById('i-event').value||'',
+      receipt:document.getElementById('i-receipt').value||'',
+      desc:document.getElementById('i-desc').value||'',
+      enteredBy:currentUser.email
+    });
+    showAlert('income-ok'); clearIncome(); loadIncomeList();
+  } catch(e){ showAlert('income-err','Failed to save. Check connection.'); }
+  btn.textContent='💾 Save Income Record'; btn.disabled=false;
+};
+
+async function loadIncomeList(){
+  const thisMonth=new Date().toISOString().slice(0,7);
+  const txns=await getTxns(currentBranch.id);
+  const monthInc=txns.filter(t=>t.flow==='income'&&t.date&&t.date.startsWith(thisMonth));
+  document.getElementById('income-tbody').innerHTML=monthInc.length?monthInc.map(t=>`<tr>
+    <td>${t.date}</td>
+    <td><span class="badge ${getCatClass(t.type)}">${fmtType(t.type)}</span></td>
+    <td>${t.event||'—'}</td>
+    <td>${t.receiver||'—'}</td>
+    <td style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--green);">₦${fmt(Number(t.amount))}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="deleteRecord('${t.id}','income')">🗑️</button></td>
+  </tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No income records this month</td></tr>';
+  document.getElementById('income-total').textContent=fmt(monthInc.reduce((s,t)=>s+Number(t.amount),0));
+}
+
+window.clearIncome = function(){
+  ['i-type','i-amount','i-receiver','i-event','i-receipt','i-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('i-date').value=new Date().toISOString().split('T')[0];
+};
+
+// ══ EXPENDITURE ═══════════════════════════════════
+window.saveExpenditure = async function(){
+  const date=document.getElementById('e-date').value;
+  const type=document.getElementById('e-type').value;
+  const amount=parseFloat(document.getElementById('e-amount').value);
+  if(!date||!type||!amount||amount<=0){ showAlert('exp-err'); return; }
+  const btn=document.getElementById('exp-save-btn');
+  btn.textContent='Saving…'; btn.disabled=true;
+  try {
+    await addTxn({
+      branch:currentBranch.id, flow:'expenditure', type, amount,
+      date, beneficiary:document.getElementById('e-beneficiary').value||'',
+      approved:document.getElementById('e-approved').value||'',
+      voucher:document.getElementById('e-voucher').value||'',
+      desc:document.getElementById('e-desc').value||'',
+      enteredBy:currentUser.email
+    });
+    showAlert('exp-ok'); clearExpenditure(); loadExpList();
+  } catch(e){ showAlert('exp-err','Failed to save. Check connection.'); }
+  btn.textContent='💾 Save Expenditure Record'; btn.disabled=false;
+};
+
+async function loadExpList(){
+  const thisMonth=new Date().toISOString().slice(0,7);
+  const txns=await getTxns(currentBranch.id);
+  const monthExp=txns.filter(t=>t.flow==='expenditure'&&t.date&&t.date.startsWith(thisMonth));
+  document.getElementById('exp-tbody').innerHTML=monthExp.length?monthExp.map(t=>`<tr>
+    <td>${t.date}</td>
+    <td><span class="badge ${getCatClass(t.type)}">${fmtType(t.type)}</span></td>
+    <td>${t.beneficiary||'—'}</td>
+    <td>${t.approved||'—'}</td>
+    <td style="font-family:'Montserrat',sans-serif;font-weight:700;color:var(--red);">₦${fmt(Number(t.amount))}</td>
+    <td><button class="btn btn-ghost btn-sm" onclick="deleteRecord('${t.id}','exp')">🗑️</button></td>
+  </tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No expenditure records this month</td></tr>';
+  document.getElementById('exp-total').textContent=fmt(monthExp.reduce((s,t)=>s+Number(t.amount),0));
+}
+
+window.clearExpenditure = function(){
+  ['e-type','e-amount','e-beneficiary','e-approved','e-voucher','e-desc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('e-date').value=new Date().toISOString().split('T')[0];
+};
+
+// ══ ALL TRANSACTIONS ══════════════════════════════
+window.loadAllTx = async function(filter={}){
+  const branch = currentBranch.role==='admin'?null:currentBranch.id;
+  let txns = await getTxns(branch);
+  if(filter.from) txns=txns.filter(t=>t.date>=filter.from);
+  if(filter.to)   txns=txns.filter(t=>t.date<=filter.to);
+  if(filter.type) txns=txns.filter(t=>t.flow===filter.type);
+  if(filter.branch && filter.branch!=='ALL') txns=txns.filter(t=>t.branch===filter.branch);
+  txns.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('tx-tbody').innerHTML=txns.length?txns.map(t=>`<tr>
+    <td>${t.date||'—'}</td>
+    ${currentBranch.role==='admin'?`<td style="font-size:.75rem;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--purple);">${BRANCH_BY_ID[t.branch]?.short||t.branch}</td>`:''}
+    <td><span class="badge ${t.flow}">${t.flow==='income'?'Income':'Expenditure'}</span></td>
+    <td><span class="badge ${getCatClass(t.type)}">${fmtType(t.type)}</span></td>
+    <td>${t.desc||'—'}</td>
+    <td style="font-family:'Montserrat',sans-serif;font-weight:700;color:${t.flow==='income'?'var(--green)':'var(--red)'};">${t.flow==='income'?'+':'-'}₦${fmt(Number(t.amount))}</td>
+  </tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No transactions found</td></tr>';
+  const incSum=txns.filter(t=>t.flow==='income').reduce((s,t)=>s+Number(t.amount),0);
+  const expSum=txns.filter(t=>t.flow==='expenditure').reduce((s,t)=>s+Number(t.amount),0);
+  document.getElementById('tx-inc-total').textContent=fmt(incSum);
+  document.getElementById('tx-exp-total').textContent=fmt(expSum);
+  document.getElementById('tx-net').textContent=fmt(incSum-expSum);
+  document.getElementById('tx-net').style.color=(incSum-expSum)>=0?'var(--green)':'var(--red)';
+};
+
+window.filterTx = function(){
+  loadAllTx({from:document.getElementById('f-from').value,to:document.getElementById('f-to').value,type:document.getElementById('f-type').value,branch:document.getElementById('f-branch')?.value});
+};
+window.clearFilter = function(){
+  ['f-from','f-to','f-type'].forEach(id=>document.getElementById(id).value='');
+  const fb=document.getElementById('f-branch'); if(fb) fb.value='ALL';
+  loadAllTx();
+};
+
+// ══ REPORTS ═══════════════════════════════════════
+window.buildReport = async function(){
+  const month=document.getElementById('r-month').value||new Date().toISOString().slice(0,7);
+  const branch=currentBranch.role==='admin'?null:currentBranch.id;
+  const txns=await getTxns(branch);
+  const mTxns=txns.filter(t=>t.date&&t.date.startsWith(month));
+  const incR=mTxns.filter(t=>t.flow==='income');
+  const expR=mTxns.filter(t=>t.flow==='expenditure');
+  const totalI=incR.reduce((s,t)=>s+Number(t.amount),0);
+  const totalE=expR.reduce((s,t)=>s+Number(t.amount),0);
+  const net=totalI-totalE;
+  document.getElementById('report-stats').innerHTML=`
+    <div class="stat-card purple"><div class="stat-icon">💰</div><div class="stat-label">Total Income</div><div class="stat-value purple">₦${fmt(totalI)}</div></div>
+    <div class="stat-card red"><div class="stat-icon">💸</div><div class="stat-label">Total Expenditure</div><div class="stat-value red">₦${fmt(totalE)}</div></div>
+    <div class="stat-card ${net>=0?'green':'red'}"><div class="stat-icon">${net>=0?'📈':'📉'}</div><div class="stat-label">Net Balance</div><div class="stat-value ${net>=0?'green':'red'}">₦${fmt(net)}</div></div>
+    <div class="stat-card gold"><div class="stat-icon">📑</div><div class="stat-label">Total Records</div><div class="stat-value gold">${mTxns.length}</div></div>
+  `;
+  // Weekly line chart
+  const weeks=['Week 1','Week 2','Week 3','Week 4'];
+  const wI=[0,0,0,0]; const wE=[0,0,0,0];
+  incR.forEach(t=>{const d=new Date(t.date).getDate();const w=Math.min(Math.floor((d-1)/7),3);wI[w]+=Number(t.amount);});
+  expR.forEach(t=>{const d=new Date(t.date).getDate();const w=Math.min(Math.floor((d-1)/7),3);wE[w]+=Number(t.amount);});
+  destroyChart(rLineInst);
+  rLineInst=new Chart(document.getElementById('rLineChart'),{type:'line',data:{labels:weeks,datasets:[
+    {label:'Income',data:wI,borderColor:'#5B1FA2',backgroundColor:'rgba(91,31,162,.12)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#5B1FA2'},
+    {label:'Expenditure',data:wE,borderColor:'#CC0000',backgroundColor:'rgba(204,0,0,.08)',fill:true,tension:.4,pointRadius:5,pointBackgroundColor:'#CC0000'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Montserrat',size:11},boxWidth:12}}},scales:{y:{ticks:{callback:v=>'₦'+fmtShort(v),font:{family:'Montserrat',size:10}}}}}});
+  // Exp pie
+  const expCats={};
+  expR.forEach(t=>{const k=fmtType(t.type);expCats[k]=(expCats[k]||0)+Number(t.amount);});
+  const pieCols=['#CC0000','#5B1FA2','#C9940A','#16A34A','#2563EB','#EC4899','#6B6680','#D97706'];
+  destroyChart(rPieInst);
+  if(Object.keys(expCats).length){
+    rPieInst=new Chart(document.getElementById('rPieChart'),{type:'pie',data:{labels:Object.keys(expCats),datasets:[{data:Object.values(expCats),backgroundColor:pieCols,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{family:'Montserrat',size:10},boxWidth:12,padding:8}}}}});
+  }
+  // Tables
+  document.getElementById('r-income-tbody').innerHTML=incR.map(t=>`<tr><td>${t.date}</td><td><span class="badge ${getCatClass(t.type)}">${fmtType(t.type)}</span></td><td>${t.event||'—'}</td><td>${t.receiver||'—'}</td><td style="font-weight:700;color:var(--green);font-family:'Montserrat',sans-serif;">₦${fmt(Number(t.amount))}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">No income records for this period</td></tr>';
+  document.getElementById('r-inc-sum').textContent=fmt(totalI);
+  document.getElementById('r-exp-tbody').innerHTML=expR.map(t=>`<tr><td>${t.date}</td><td><span class="badge ${getCatClass(t.type)}">${fmtType(t.type)}</span></td><td>${t.beneficiary||'—'}</td><td>${t.approved||'—'}</td><td style="font-weight:700;color:var(--red);font-family:'Montserrat',sans-serif;">₦${fmt(Number(t.amount))}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">No expenditure records for this period</td></tr>';
+  document.getElementById('r-exp-sum').textContent=fmt(totalE);
+};
+
+// ══ REGIONAL ══════════════════════════════════════
+window.buildRegional = async function(){
+  const month=document.getElementById('reg-month').value||new Date().toISOString().slice(0,7);
+  const all=await getTxns(null);
+  const mAll=all.filter(t=>t.date&&t.date.startsWith(month));
+  const totalI=mAll.filter(t=>t.flow==='income').reduce((s,t)=>s+Number(t.amount),0);
+  const totalE=mAll.filter(t=>t.flow==='expenditure').reduce((s,t)=>s+Number(t.amount),0);
+  const net=totalI-totalE;
+  document.getElementById('reg-stats').innerHTML=`
+    <div class="stat-card purple"><div class="stat-icon">💰</div><div class="stat-label">Regional Income</div><div class="stat-value purple">₦${fmt(totalI)}</div><div class="stat-sub">All branches combined</div></div>
+    <div class="stat-card red"><div class="stat-icon">💸</div><div class="stat-label">Regional Expenditure</div><div class="stat-value red">₦${fmt(totalE)}</div><div class="stat-sub">All branches combined</div></div>
+    <div class="stat-card ${net>=0?'green':'red'}"><div class="stat-icon">${net>=0?'✅':'⚠️'}</div><div class="stat-label">Regional Net Balance</div><div class="stat-value ${net>=0?'green':'red'}">₦${fmt(net)}</div></div>
+    <div class="stat-card gold"><div class="stat-icon">🏛️</div><div class="stat-label">Active Branches</div><div class="stat-value gold">7</div><div class="stat-sub">Akure Region</div></div>
+  `;
+  document.getElementById('branch-cards').innerHTML=ALL_BRANCH_IDS.map(bk=>{
+    const bTxns=mAll.filter(t=>t.branch===bk);
+    const bInc=bTxns.filter(t=>t.flow==='income').reduce((s,t)=>s+Number(t.amount),0);
+    const bExp=bTxns.filter(t=>t.flow==='expenditure').reduce((s,t)=>s+Number(t.amount),0);
+    return `<div class="branch-card">
+      <div class="bc-name">${BRANCH_BY_ID[bk]?.name||bk}</div>
+      <div class="bc-loc">${BRANCH_BY_ID[bk]?.short||''}</div>
+      <div class="bc-nums">
+        <div class="bc-num"><div class="n-lbl">Income</div><div class="n-val inc">₦${fmt(bInc)}</div></div>
+        <div class="bc-num"><div class="n-lbl">Expenditure</div><div class="n-val exp">₦${fmt(bExp)}</div></div>
+        <div class="bc-num"><div class="n-lbl">Net</div><div class="n-val ${(bInc-bExp)>=0?'inc':'exp'}">₦${fmt(bInc-bExp)}</div></div>
+        <div class="bc-num"><div class="n-lbl">Records</div><div class="n-val" style="color:var(--purple);">${bTxns.length}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  const sorted=[...mAll].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('reg-tx-tbody').innerHTML=sorted.length?sorted.map(t=>`<tr>
+    <td>${t.date||'—'}</td>
+    <td style="font-size:.75rem;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--purple);">${BRANCH_BY_ID[t.branch]?.short||t.branch}</td>
+    <td><span class="badge ${t.flow}">${t.flow==='income'?'Income':'Expenditure'}</span></td>
+    <td><span class="badge ${getCatClass(t.type)}">${fmtType(t.type)}</span></td>
+    <td>${t.desc||'—'}</td>
+    <td style="font-family:'Montserrat',sans-serif;font-weight:700;color:${t.flow==='income'?'var(--green)':'var(--red)'};">${t.flow==='income'?'+':'-'}₦${fmt(Number(t.amount))}</td>
+  </tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">No records for this period</td></tr>';
+};
+
+// ══ DELETE ════════════════════════════════════════
+window.deleteRecord = async function(id, page){
+  if(!confirm('Delete this record permanently? This cannot be undone.')) return;
+  try {
+    await deleteTxn(id);
+    if(page==='income') loadIncomeList();
+    if(page==='exp')    loadExpList();
+  } catch(e){ alert('Failed to delete. Check your connection.'); }
+};
+
+// ══ UTILITIES ═════════════════════════════════════
+function fmt(n){return Number(n||0).toLocaleString('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtShort(n){if(n>=1000000)return(n/1000000).toFixed(1)+'M';if(n>=1000)return(n/1000).toFixed(0)+'K';return n;}
+function destroyChart(c){if(c)c.destroy();}
+function getLast6Months(){const m=[];const now=new Date();for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);m.push(d.toISOString().slice(0,7));}return m;}
+const TYPE_MAP={tithe:'Tithe',offering:'Sunday Offering','offering-mid':'Midweek Offering',donation:'Donation',vow:'Vow/Pledge',thanksgiving:'Thanksgiving',harvest:'Harvest',project:'Project Offering','other':'Other Income','remittance-hq':'HQ Remittance','remittance-region':'Region Remittance','remittance-province':'Province Remittance',salary:'Salary',allowance:'Allowance',honorarium:'Honorarium',electricity:'Electricity/Utility',maintenance:'Maintenance',stationery:'Stationery',transport:'Transport',welfare:'Welfare',evangelism:'Evangelism',program:'Programme Exp.','other-exp':'Other Expense'};
+function fmtType(t){return TYPE_MAP[t]||t||'—';}
+function getCatClass(t){if(!t)return'other';if(t==='tithe')return'tithe';if(t.startsWith('offering'))return'offering';if(t==='donation')return'donation';if(t==='vow')return'vow';if(t.startsWith('remittance'))return'remittance';if(t==='salary'||t==='allowance'||t==='honorarium')return'salary';if(['electricity','maintenance','stationery','transport','program'].includes(t))return'running';if(['welfare','evangelism'].includes(t))return'allowance';return'other';}
+function showAlert(id, msg){const el=document.getElementById(id);if(msg)el.textContent='⚠️ '+msg;el.style.display='block';setTimeout(()=>el.style.display='none',5000);}
+window.printPage=function(){window.print();};
+
+</script>
+
+<style>
+:root{
+  --purple:#5B1FA2;--purple-dk:#3D1170;--purple-lt:#7B3CC3;--purple-bg:#F0EBF9;
+  --red:#CC0000;--gold:#C9940A;--white:#fff;--off:#F7F5FB;
+  --mtn:#1A1A2E;--border:#DDD5EC;--muted:#6B6680;
+  --green:#16A34A;--green-bg:#F0FBF4;--text:#1A1A2E;
+  --sidebar-w:250px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Open Sans',sans-serif;background:var(--off);color:var(--text);min-height:100vh;}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,var(--purple-dk) 0%,var(--mtn) 60%,#0D0D1A 100%);padding:1rem;position:relative;overflow:hidden;}
+#login-screen::before{content:'';position:absolute;bottom:0;left:0;width:100%;height:40%;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 1440 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='0,200 300,200 720,30 1140,200 1440,200' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E") bottom no-repeat;background-size:cover;pointer-events:none;}
+.login-card{background:var(--white);border-radius:16px;padding:2.8rem 2.2rem;width:100%;max-width:440px;box-shadow:0 32px 80px rgba(0,0,0,.5);position:relative;z-index:1;}
+.login-header{text-align:center;margin-bottom:2rem;}
+.login-emblem{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--purple-lt));display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;box-shadow:0 8px 24px rgba(91,31,162,.4);}
+.login-header h2{font-family:'Montserrat',sans-serif;font-size:1.15rem;font-weight:800;color:var(--purple-dk);margin-bottom:.2rem;}
+.login-header p{font-size:.78rem;color:var(--muted);}
+.security-badge{background:linear-gradient(90deg,var(--purple-bg),#fff);border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:4px;padding:.6rem 1rem;margin-bottom:1.8rem;display:flex;align-items:center;gap:.6rem;}
+.security-badge span{font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:600;color:var(--purple);}
+.fg{margin-bottom:1.1rem;}
+.fg label{display:block;font-family:'Montserrat',sans-serif;font-size:.63rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;}
+.fg input,.fg select{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:.8rem 1rem;font-family:'Open Sans',sans-serif;font-size:.9rem;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;background:var(--off);}
+.fg input:focus,.fg select:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(91,31,162,.12);background:var(--white);}
+.btn-login{width:100%;background:linear-gradient(135deg,var(--purple),var(--purple-lt));color:#fff;font-family:'Montserrat',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:.95rem;border:none;border-radius:6px;cursor:pointer;margin-top:.5rem;box-shadow:0 4px 16px rgba(91,31,162,.4);transition:opacity .2s;}
+.btn-login:hover{opacity:.9;}
+.btn-login:disabled{opacity:.6;cursor:not-allowed;}
+.login-err{display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:.65rem 1rem;color:#B91C1C;font-size:.82rem;text-align:center;margin-top:.75rem;font-family:'Montserrat',sans-serif;}
+.login-setup{background:var(--off);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-top:1.5rem;}
+.login-setup h4{font-family:'Montserrat',sans-serif;font-size:.72rem;font-weight:700;color:var(--mtn);margin-bottom:.6rem;letter-spacing:.05em;}
+.login-setup p{font-size:.72rem;color:var(--muted);line-height:1.7;}
+.login-setup code{background:var(--purple-bg);color:var(--purple);padding:.1rem .4rem;border-radius:3px;font-size:.72rem;font-family:monospace;}
+
+/* APP */
+#app{display:none;min-height:100vh;}
+.app-layout{display:flex;min-height:100vh;}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar-w);background:var(--purple-dk);flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100;overflow-y:auto;}
+.sb-brand{padding:1.3rem 1.2rem;border-bottom:1px solid rgba(255,255,255,.1);}
+.sb-logo{display:flex;align-items:center;gap:.7rem;}
+.sb-circle{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sb-logo-text{font-family:'Montserrat',sans-serif;font-size:.78rem;font-weight:700;color:#fff;line-height:1.25;}
+.sb-branch-box{background:rgba(255,255,255,.07);border-radius:6px;padding:.6rem .9rem;margin:.9rem 1rem 0;border-left:3px solid var(--gold);}
+.sb-branch-box strong{font-family:'Montserrat',sans-serif;font-size:.72rem;font-weight:700;color:var(--gold);display:block;margin-bottom:.1rem;}
+.sb-branch-box span{font-size:.65rem;color:rgba(255,255,255,.55);}
+.sb-nav{flex:1;padding:.8rem 0;}
+.sb-section{font-family:'Montserrat',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:.7rem 1.2rem .3rem;}
+.sb-item{display:flex;align-items:center;gap:.7rem;padding:.65rem 1.2rem;cursor:pointer;transition:all .2s;color:rgba(255,255,255,.65);font-family:'Montserrat',sans-serif;font-size:.77rem;font-weight:500;border:none;background:none;width:100%;text-align:left;border-left:3px solid transparent;}
+.sb-item:hover{background:rgba(255,255,255,.08);color:#fff;border-left-color:rgba(255,255,255,.2);}
+.sb-item.active{background:rgba(255,255,255,.14);color:#fff;border-left-color:var(--gold);}
+.sb-item .si{font-size:.95rem;width:18px;text-align:center;}
+.sb-footer{padding:1rem 1.2rem;border-top:1px solid rgba(255,255,255,.08);}
+.sb-user{display:flex;align-items:center;gap:.65rem;margin-bottom:.7rem;}
+.sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--purple-lt),var(--purple));display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;}
+.sb-uname{font-family:'Montserrat',sans-serif;font-size:.72rem;font-weight:700;color:#fff;}
+.sb-urole{font-size:.62rem;color:rgba(255,255,255,.45);}
+.btn-logout{width:100%;background:rgba(204,0,0,.15);color:rgba(255,255,255,.7);border:1px solid rgba(204,0,0,.3);font-family:'Montserrat',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.55rem;border-radius:4px;cursor:pointer;transition:all .2s;}
+.btn-logout:hover{background:rgba(204,0,0,.5);color:#fff;}
+
+/* MAIN */
+.main-content{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:.85rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.topbar-left{display:flex;align-items:center;gap:1rem;}
+.topbar h1{font-family:'Montserrat',sans-serif;font-size:.95rem;font-weight:700;color:var(--mtn);}
+.tb-live{display:flex;align-items:center;gap:.35rem;font-family:'Montserrat',sans-serif;font-size:.65rem;font-weight:700;color:var(--green);letter-spacing:.08em;text-transform:uppercase;}
+.tb-live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.tb-date{font-size:.75rem;color:var(--muted);font-family:'Montserrat',sans-serif;}
+.page{display:none;padding:2rem;flex:1;}
+.page.active{display:block;}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-bottom:2rem;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.4rem;position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;}
+.stat-card.purple::before{background:var(--purple);}
+.stat-card.red::before{background:var(--red);}
+.stat-card.green::before{background:var(--green);}
+.stat-card.gold::before{background:var(--gold);}
+.stat-label{font-family:'Montserrat',sans-serif;font-size:.63rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;}
+.stat-value{font-family:'Montserrat',sans-serif;font-size:1.45rem;font-weight:800;color:var(--mtn);line-height:1;}
+.stat-value.purple{color:var(--purple);}
+.stat-value.red{color:var(--red);}
+.stat-value.green{color:var(--green);}
+.stat-value.gold{color:var(--gold);}
+.stat-sub{font-size:.7rem;color:var(--muted);margin-top:.4rem;}
+.stat-icon{position:absolute;top:1rem;right:1rem;font-size:1.8rem;opacity:.15;}
+
+/* CARD */
+.card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.5rem;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:1.5rem;}
+.card-title{font-family:'Montserrat',sans-serif;font-size:.85rem;font-weight:700;color:var(--mtn);margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem;}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+.chart-wrap{position:relative;height:260px;}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:.83rem;}
+thead th{background:var(--purple-bg);font-family:'Montserrat',sans-serif;font-size:.63rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--purple);padding:.75rem 1rem;text-align:left;border-bottom:2px solid var(--border);}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s;}
+tbody tr:hover{background:var(--off);}
+tbody td{padding:.75rem 1rem;}
+tfoot td{border-top:2px solid var(--border);}
+.badge{display:inline-block;font-family:'Montserrat',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.2rem .65rem;border-radius:30px;}
+.badge.income{background:#DCFCE7;color:#15803D;}
+.badge.expenditure{background:#FEE2E2;color:#B91C1C;}
+.badge.tithe{background:#EDE9FE;color:var(--purple);}
+.badge.offering{background:#FEF9C3;color:#854D0E;}
+.badge.donation{background:#DBEAFE;color:#1D4ED8;}
+.badge.vow{background:#FCE7F3;color:#9D174D;}
+.badge.remittance{background:#FEE2E2;color:#B91C1C;}
+.badge.salary{background:#FFEDD5;color:#C2410C;}
+.badge.running{background:#F3F4F6;color:#374151;}
+.badge.allowance{background:#E0F2FE;color:#0369A1;}
+.badge.other{background:#F3F4F6;color:#374151;}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+.form-full{grid-column:1/-1;}
+.fg2{margin-bottom:0;}
+.fg2 label{display:block;font-family:'Montserrat',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:.35rem;}
+.fg2 input,.fg2 select,.fg2 textarea{width:100%;border:1.5px solid var(--border);border-radius:5px;padding:.7rem .9rem;font-family:'Open Sans',sans-serif;font-size:.88rem;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s;background:var(--off);}
+.fg2 input:focus,.fg2 select:focus,.fg2 textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px rgba(91,31,162,.1);background:var(--white);}
+.fg2 textarea{min-height:80px;resize:vertical;}
+.fg2 select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236B6680' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .9rem center;background-color:var(--off);cursor:pointer;}
+.form-actions{display:flex;gap:1rem;margin-top:1.5rem;padding-top:1.2rem;border-top:1px solid var(--border);}
+.btn{font-family:'Montserrat',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.75rem 1.8rem;border-radius:5px;cursor:pointer;border:none;transition:all .2s;}
+.btn:disabled{opacity:.6;cursor:not-allowed;}
+.btn-purple{background:var(--purple);color:#fff;box-shadow:0 4px 12px rgba(91,31,162,.3);}
+.btn-purple:hover:not(:disabled){background:var(--purple-dk);}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 4px 12px rgba(204,0,0,.25);}
+.btn-red:hover:not(:disabled){background:#A80000;}
+.btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border);}
+.btn-ghost:hover{border-color:var(--purple);color:var(--purple);}
+.btn-sm{padding:.45rem 1rem;font-size:.67rem;}
+
+/* ALERTS */
+.alert{border-radius:4px;padding:.75rem 1.1rem;font-size:.83rem;margin-bottom:1rem;display:none;font-family:'Montserrat',sans-serif;font-weight:500;}
+.alert.success{background:var(--green-bg);border:1px solid #BBF7D0;color:#15803D;}
+.alert.error{background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:.8rem;flex-wrap:wrap;margin-bottom:1.2rem;align-items:flex-end;}
+.filter-bar .fg2{margin-bottom:0;}
+.filter-bar .fg2 input,.filter-bar .fg2 select{padding:.55rem .8rem;font-size:.83rem;}
+
+/* SEC HEADER */
+.sec-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;}
+.sec-header h2{font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:800;color:var(--mtn);}
+.sec-header p{font-size:.78rem;color:var(--muted);margin-top:.2rem;}
+
+/* BRANCH CARDS */
+.branch-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1.2rem;margin-bottom:1.5rem;}
+.branch-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.4rem;position:relative;overflow:hidden;}
+.branch-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,var(--purple),var(--red));}
+.bc-name{font-family:'Montserrat',sans-serif;font-size:.85rem;font-weight:700;color:var(--mtn);margin-bottom:.2rem;}
+.bc-loc{font-size:.72rem;color:var(--muted);margin-bottom:1rem;}
+.bc-nums{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.bc-num{background:var(--off);border-radius:5px;padding:.6rem .8rem;}
+.bc-num .n-lbl{font-family:'Montserrat',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.bc-num .n-val{font-family:'Montserrat',sans-serif;font-size:.9rem;font-weight:800;margin-top:.15rem;}
+.n-val.inc{color:var(--green);}
+.n-val.exp{color:var(--red);}
+
+/* SETUP GUIDE */
+.setup-guide{background:linear-gradient(135deg,var(--purple-bg),#fff);border:2px solid var(--purple);border-radius:12px;padding:2rem;margin-bottom:2rem;}
+.setup-guide h3{font-family:'Montserrat',sans-serif;font-size:1rem;font-weight:800;color:var(--purple-dk);margin-bottom:1rem;}
+.setup-step{display:flex;gap:1rem;margin-bottom:1.2rem;align-items:flex-start;}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--purple);color:#fff;font-family:'Montserrat',sans-serif;font-size:.75rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-content h4{font-family:'Montserrat',sans-serif;font-size:.82rem;font-weight:700;color:var(--mtn);margin-bottom:.25rem;}
+.step-content p{font-size:.8rem;color:var(--muted);line-height:1.6;}
+.step-content code{background:var(--purple-bg);color:var(--purple);padding:.1rem .5rem;border-radius:3px;font-size:.78rem;font-family:monospace;display:inline-block;margin:.1rem 0;}
+
+/* RESPONSIVE */
+@media(max-width:1000px){.stat-grid{grid-template-columns:1fr 1fr;}.charts-grid{grid-template-columns:1fr;}.form-grid{grid-template-columns:1fr;}}
+@media(max-width:680px){.sidebar{transform:translateX(-100%);transition:transform .3s;}.sidebar.open{transform:translateX(0);}.main-content{margin-left:0;}.stat-grid{grid-template-columns:1fr 1fr;}}
+@media print{.sidebar,.topbar,.form-actions,.btn,.filter-bar{display:none!important;}.main-content{margin-left:0;}.page.active{display:block!important;}}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOGIN ══════════════════════════════ -->
+<div id="login-screen">
+<div class="login-card">
+  <div class="login-header">
+    <div class="login-emblem">
+      <svg width="36" height="28" viewBox="0 0 34 26" fill="none">
+        <polygon points="17,2 28,22 6,22" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+        <polygon points="8,22 15,10 22,22" fill="white" opacity="0.85"/>
+        <line x1="4" y1="22" x2="30" y2="22" stroke="white" stroke-width="2.5"/>
+      </svg>
+    </div>
+    <h2>MFM Financial Portal</h2>
+    <p>Akure Regional Office · Ondo State, Nigeria</p>
+  </div>
+  <div class="security-badge">
+    <span>🔒</span>
+    <span>Authorised Personnel Only — Secure Login</span>
+  </div>
+  <div class="fg">
+    <label>Email Address</label>
+    <input type="email" id="loginEmail" placeholder="e.g. hq@mfmararomi.org" onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
+  <div class="fg">
+    <label>Password</label>
+    <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
+  <button class="btn-login" id="loginBtn" onclick="doLogin()">Login to Portal</button>
+  <div class="login-err" id="loginErr"></div>
+
+  <div class="login-setup">
+    <h4>⚙️ Firebase Setup Required</h4>
+    <p>This portal requires a Firebase project to store data in real time across all branches. Follow the setup guide inside the portal after configuring your Firebase credentials in the HTML file.</p>
+    <p style="margin-top:.5rem;">Branch emails follow the pattern: <code>hq@mfmararomi.org</code>, <code>okeijebu@mfmararomi.org</code>, etc.</p>
+  </div>
+</div>
+</div>
+
+<!-- ══════════ APP ════════════════════════════════ -->
+<div id="app">
+<div class="app-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">
+        <div class="sb-circle">
+          <svg width="22" height="18" viewBox="0 0 34 26" fill="none">
+            <polygon points="17,2 28,22 6,22" fill="none" stroke="white" stroke-width="2.5" stroke-linejoin="round"/>
+            <polygon points="8,22 15,10 22,22" fill="white" opacity="0.8"/>
+            <line x1="4" y1="22" x2="30" y2="22" stroke="white" stroke-width="2.5"/>
+          </svg>
+        </div>
+        <div class="sb-logo-text">MFM Financial<br>Portal</div>
+      </div>
+      <div class="sb-branch-box">
+        <strong id="sb-branch-name">Loading…</strong>
+        <span id="sb-branch-loc"></span>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Overview</div>
+      <button class="sb-item active" onclick="showPage('dashboard',this)"><span class="si">📊</span>Dashboard</button>
+      <div class="sb-section">Transactions</div>
+      <button class="sb-item" onclick="showPage('income',this)"><span class="si">💰</span>Record Income</button>
+      <button class="sb-item" onclick="showPage('expenditure',this)"><span class="si">💸</span>Record Expenditure</button>
+      <button class="sb-item" onclick="showPage('transactions',this)"><span class="si">📋</span>All Transactions</button>
+      <div class="sb-section">Reports</div>
+      <button class="sb-item" onclick="showPage('reports',this)"><span class="si">📈</span>Branch Report</button>
+      <button class="sb-item" onclick="showPage('regional',this)" id="sb-regional" style="display:none"><span class="si">🗺️</span>Regional Overview</button>
+      <div class="sb-section">System</div>
+      <button class="sb-item" onclick="showPage('setup',this)"><span class="si">⚙️</span>Setup Guide</button>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar">👤</div>
+        <div>
+          <div class="sb-uname" id="sb-user-name">User</div>
+          <div class="sb-urole" id="sb-user-role">Accountant</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">↩ Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 id="page-title">Dashboard</h1>
+        <div class="tb-live"><div class="tb-live-dot"></div>Live</div>
+      </div>
+      <span class="tb-date" id="tb-date"></span>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-card purple"><div class="stat-icon">💰</div><div class="stat-label">This Month's Income</div><div class="stat-value purple">Loading…</div></div>
+        <div class="stat-card red"><div class="stat-icon">💸</div><div class="stat-label">This Month's Expenditure</div><div class="stat-value red">Loading…</div></div>
+        <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-label">Net Balance</div><div class="stat-value green">Loading…</div></div>
+        <div class="stat-card gold"><div class="stat-icon">📋</div><div class="stat-label">Records This Month</div><div class="stat-value gold">—</div></div>
+      </div>
+      <div class="charts-grid">
+        <div class="card"><div class="card-title">📊 Income vs Expenditure (Last 6 Months)</div><div class="chart-wrap"><canvas id="barChart"></canvas></div></div>
+        <div class="card"><div class="card-title">🍩 Income Breakdown (This Month)</div><div class="chart-wrap"><canvas id="doughnutChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">⏱️ Recent Transactions (All Branches)</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Date</th><th>Branch</th><th>Flow</th><th>Category</th><th>Description</th><th>Amount (₦)</th></tr></thead>
+          <tbody id="recent-tbody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Loading transactions…</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- INCOME -->
+    <div class="page" id="page-income">
+      <div class="sec-header"><div><h2>Record Income</h2><p>Enter income received by your assembly</p></div></div>
+      <div class="alert success" id="income-ok">✅ Income recorded successfully and saved to Firebase!</div>
+      <div class="alert error" id="income-err">⚠️ Please fill all required fields (Date, Type, Amount).</div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fg2"><label>Date *</label><input type="date" id="i-date"></div>
+          <div class="fg2"><label>Income Type *</label>
+            <select id="i-type">
+              <option value="">— Select type —</option>
+              <option value="tithe">Tithe</option>
+              <option value="offering">Offering (Sunday)</option>
+              <option value="offering-mid">Offering (Midweek)</option>
+              <option value="donation">Donation</option>
+              <option value="vow">Vow / Pledge</option>
+              <option value="thanksgiving">Thanksgiving</option>
+              <option value="harvest">Harvest</option>
+              <option value="project">Project Offering</option>
+              <option value="other">Other Income</option>
+            </select>
+          </div>
+          <div class="fg2"><label>Amount (₦) *</label><input type="number" id="i-amount" placeholder="0.00" min="0" step="0.01"></div>
+          <div class="fg2"><label>Received By</label><input type="text" id="i-receiver" placeholder="Name of receiving officer"></div>
+          <div class="fg2"><label>Service / Event</label><input type="text" id="i-event" placeholder="e.g. Sunday Service — 23 Feb 2025"></div>
+          <div class="fg2"><label>Receipt Number</label><input type="text" id="i-receipt" placeholder="Optional receipt number"></div>
+          <div class="fg2 form-full"><label>Description / Notes</label><textarea id="i-desc" placeholder="Additional details about this income entry…"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-purple" id="income-save-btn" onclick="saveIncome()">💾 Save Income Record</button>
+          <button class="btn btn-ghost" onclick="clearIncome()">Clear Form</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">💰 This Month's Income — <span id="income-month-label"></span></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Date</th><th>Type</th><th>Event / Service</th><th>Received By</th><th>Amount (₦)</th><th>Action</th></tr></thead>
+          <tbody id="income-tbody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Loading…</td></tr></tbody>
+        </table></div>
+        <div style="margin-top:1rem;text-align:right;font-family:'Montserrat',sans-serif;font-size:.85rem;font-weight:800;color:var(--green);">Monthly Total: ₦<span id="income-total">0.00</span></div>
+      </div>
+    </div>
+
+    <!-- EXPENDITURE -->
+    <div class="page" id="page-expenditure">
+      <div class="sec-header"><div><h2>Record Expenditure</h2><p>Enter expenses incurred by your assembly</p></div></div>
+      <div class="alert success" id="exp-ok">✅ Expenditure recorded successfully and saved to Firebase!</div>
+      <div class="alert error" id="exp-err">⚠️ Please fill all required fields (Date, Type, Amount).</div>
+      <div class="card">
+        <div class="form-grid">
+          <div class="fg2"><label>Date *</label><input type="date" id="e-date"></div>
+          <div class="fg2"><label>Expenditure Type *</label>
+            <select id="e-type">
+              <option value="">— Select type —</option>
+              <optgroup label="Remittances">
+                <option value="remittance-hq">Remittance to HQ</option>
+                <option value="remittance-region">Remittance to Region</option>
+                <option value="remittance-province">Remittance to Province</option>
+              </optgroup>
+              <optgroup label="Personnel">
+                <option value="salary">Salary</option>
+                <option value="allowance">Allowance</option>
+                <option value="honorarium">Honorarium</option>
+              </optgroup>
+              <optgroup label="Church Running">
+                <option value="electricity">Electricity / Utility</option>
+                <option value="maintenance">Maintenance / Repairs</option>
+                <option value="stationery">Stationery &amp; Printing</option>
+                <option value="transport">Transport</option>
+                <option value="welfare">Welfare / Benevolence</option>
+                <option value="evangelism">Evangelism &amp; Outreach</option>
+                <option value="program">Programme Expenses</option>
+                <option value="other-exp">Other Expenditure</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="fg2"><label>Amount (₦) *</label><input type="number" id="e-amount" placeholder="0.00" min="0" step="0.01"></div>
+          <div class="fg2"><label>Paid To / Beneficiary</label><input type="text" id="e-beneficiary" placeholder="Name or organisation"></div>
+          <div class="fg2"><label>Approved By</label><input type="text" id="e-approved" placeholder="Name of approving officer"></div>
+          <div class="fg2"><label>Voucher / Receipt No.</label><input type="text" id="e-voucher" placeholder="Voucher or receipt number"></div>
+          <div class="fg2 form-full"><label>Description / Purpose</label><textarea id="e-desc" placeholder="Describe the purpose of this expenditure…"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-red" id="exp-save-btn" onclick="saveExpenditure()">💾 Save Expenditure Record</button>
+          <button class="btn btn-ghost" onclick="clearExpenditure()">Clear Form</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">💸 This Month's Expenditure — <span id="exp-month-label"></span></div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Date</th><th>Type</th><th>Paid To</th><th>Approved By</th><th>Amount (₦)</th><th>Action</th></tr></thead>
+          <tbody id="exp-tbody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Loading…</td></tr></tbody>
+        </table></div>
+        <div style="margin-top:1rem;text-align:right;font-family:'Montserrat',sans-serif;font-size:.85rem;font-weight:800;color:var(--red);">Monthly Total: ₦<span id="exp-total">0.00</span></div>
+      </div>
+    </div>
+
+    <!-- ALL TRANSACTIONS -->
+    <div class="page" id="page-transactions">
+      <div class="sec-header"><div><h2>All Transactions</h2><p>Filter, view and print your records</p></div><button class="btn btn-ghost btn-sm" onclick="printPage()">🖨️ Print</button></div>
+      <div class="card">
+        <div class="filter-bar">
+          <div class="fg2"><label>From Date</label><input type="date" id="f-from"></div>
+          <div class="fg2"><label>To Date</label><input type="date" id="f-to"></div>
+          <div class="fg2"><label>Flow Type</label><select id="f-type" style="min-width:130px;"><option value="">All</option><option value="income">Income</option><option value="expenditure">Expenditure</option></select></div>
+          <button class="btn btn-purple btn-sm" onclick="filterTx()" style="align-self:flex-end;margin-bottom:.05rem;">Filter</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearFilter()" style="align-self:flex-end;margin-bottom:.05rem;">Clear</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Date</th><th>Flow</th><th>Category</th><th>Description</th><th>Amount (₦)</th></tr></thead>
+          <tbody id="tx-tbody"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:2rem;">Loading…</td></tr></tbody>
+        </table></div>
+        <div style="margin-top:1rem;display:flex;gap:2rem;justify-content:flex-end;font-family:'Montserrat',sans-serif;font-size:.82rem;font-weight:700;flex-wrap:wrap;">
+          <span style="color:var(--green);">Total Income: ₦<span id="tx-inc-total">0.00</span></span>
+          <span style="color:var(--red);">Total Expenditure: ₦<span id="tx-exp-total">0.00</span></span>
+          <span style="color:var(--purple);">Net Balance: ₦<span id="tx-net">0.00</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="sec-header"><div><h2>Branch Financial Report</h2><p>Monthly financial summary with charts</p></div><button class="btn btn-ghost btn-sm" onclick="printPage()">🖨️ Print Report</button></div>
+      <div class="filter-bar" style="margin-bottom:1.5rem;">
+        <div class="fg2"><label>Select Month</label><input type="month" id="r-month"></div>
+        <button class="btn btn-purple btn-sm" onclick="buildReport()" style="align-self:flex-end;margin-bottom:.05rem;">Generate</button>
+      </div>
+      <div class="stat-grid" id="report-stats"></div>
+      <div class="charts-grid">
+        <div class="card"><div class="card-title">📊 Weekly Income Trend</div><div class="chart-wrap"><canvas id="rLineChart"></canvas></div></div>
+        <div class="card"><div class="card-title">🥧 Expenditure Breakdown</div><div class="chart-wrap"><canvas id="rPieChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📄 Income Detail</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Date</th><th>Type</th><th>Event/Service</th><th>Received By</th><th>Amount (₦)</th></tr></thead>
+          <tbody id="r-income-tbody"></tbody>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:700;padding:.75rem 1rem;font-family:'Montserrat',sans-serif;font-size:.8rem;color:var(--green);">TOTAL INCOME</td><td style="font-weight:800;color:var(--green);padding:.75rem 1rem;font-family:'Montserrat',sans-serif;">₦<span id="r-inc-sum">0.00</span></td></tr></tfoot>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📄 Expenditure Detail</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Date</th><th>Type</th><th>Paid To</th><th>Approved By</th><th>Amount (₦)</th></tr></thead>
+          <tbody id="r-exp-tbody"></tbody>
+          <tfoot><tr><td colspan="4" style="text-align:right;font-weight:700;padding:.75rem 1rem;font-family:'Montserrat',sans-serif;font-size:.8rem;color:var(--red);">TOTAL EXPENDITURE</td><td style="font-weight:800;color:var(--red);padding:.75rem 1rem;font-family:'Montserrat',sans-serif;">₦<span id="r-exp-sum">0.00</span></td></tr></tfoot>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- REGIONAL -->
+    <div class="page" id="page-regional">
+      <div class="sec-header"><div><h2>Regional Overview</h2><p>Consolidated financial data — all 7 branches</p></div><button class="btn btn-ghost btn-sm" onclick="printPage()">🖨️ Print</button></div>
+      <div class="filter-bar" style="margin-bottom:1.5rem;">
+        <div class="fg2"><label>Select Month</label><input type="month" id="reg-month"></div>
+        <button class="btn btn-purple btn-sm" onclick="buildRegional()" style="align-self:flex-end;margin-bottom:.05rem;">Refresh</button>
+      </div>
+      <div class="stat-grid" id="reg-stats"></div>
+      <div class="branch-cards" id="branch-cards"></div>
+      <div class="card">
+        <div class="card-title">🏆 All Transactions — All Branches</div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Date</th><th>Branch</th><th>Flow</th><th>Category</th><th>Description</th><th>Amount (₦)</th></tr></thead>
+          <tbody id="reg-tx-tbody"><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem;">Loading…</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- SETUP GUIDE -->
+    <div class="page" id="page-setup">
+      <div class="sec-header"><div><h2>Firebase Setup Guide</h2><p>Connect your portal to Firebase for real-time multi-branch data</p></div></div>
+      <div class="setup-guide">
+        <h3>🔥 How to Connect Firebase (Step-by-Step)</h3>
+        <div class="setup-step"><div class="step-num">1</div><div class="step-content"><h4>Create a Firebase Project</h4><p>Go to <strong>console.firebase.google.com</strong> → Click "Add project" → Name it <strong>mfm-akure-portal</strong> → Follow the setup wizard → Disable Google Analytics (not needed).</p></div></div>
+        <div class="setup-step"><div class="step-num">2</div><div class="step-content"><h4>Get Your Firebase Config</h4><p>In your project dashboard → Click the web icon (&lt;/&gt;) → Register your app as <strong>mfm-portal</strong> → Copy the <code>firebaseConfig</code> object shown. It contains your <code>apiKey</code>, <code>authDomain</code>, <code>projectId</code>, etc.</p></div></div>
+        <div class="setup-step"><div class="step-num">3</div><div class="step-content"><h4>Update This File</h4><p>Open <code>mfm-financial-portal.html</code> in a text editor (Notepad++, VS Code) → Find the section labelled <code>🔥 FIREBASE CONFIGURATION</code> → Replace all <code>YOUR_API_KEY</code>, <code>YOUR_PROJECT_ID</code> etc. with your actual Firebase values.</p></div></div>
+        <div class="setup-step"><div class="step-num">4</div><div class="step-content"><h4>Enable Firestore Database</h4><p>In Firebase Console → "Firestore Database" → "Create database" → Choose <strong>Production mode</strong> → Select a region close to Nigeria (e.g. <code>europe-west1</code>) → Click Enable.</p></div></div>
+        <div class="setup-step"><div class="step-num">5</div><div class="step-content"><h4>Set Firestore Security Rules</h4><p>In Firestore → Rules tab → Replace the rules with the rules below to allow authenticated users to read/write:</p>
+          <code>rules_version = '2';<br>service cloud.firestore {<br>&nbsp;&nbsp;match /databases/{database}/documents {<br>&nbsp;&nbsp;&nbsp;&nbsp;match /transactions/{doc} {<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allow read, write: if request.auth != null;<br>&nbsp;&nbsp;&nbsp;&nbsp;}<br>&nbsp;&nbsp;}<br>}</code>
+        </div></div>
+        <div class="setup-step"><div class="step-num">6</div><div class="step-content"><h4>Enable Firebase Authentication</h4><p>In Firebase Console → "Authentication" → "Get started" → "Email/Password" → Enable it → Save.</p></div></div>
+        <div class="setup-step"><div class="step-num">7</div><div class="step-content"><h4>Create User Accounts for Each Branch</h4><p>In Firebase Authentication → "Add user" → Create one account per branch using these emails (set your own passwords):</p>
+          <code>hq@mfmararomi.org</code>
+          <code>okeijebu@mfmararomi.org</code>
+          <code>ijoka@mfmararomi.org</code>
+          <code>shagari@mfmararomi.org</code>
+          <code>aswani@mfmararomi.org</code>
+          <code>obaile@mfmararomi.org</code>
+          <code>ijapo@mfmararomi.org</code>
+          <code>admin@mfmararomi.org</code>
+        </div></div>
+        <div class="setup-step"><div class="step-num">8</div><div class="step-content"><h4>Upload to Your Host &amp; Test</h4><p>Upload <code>mfm-financial-portal.html</code> to your web host (QServers, Hostinger, WhoGoHost etc.) → Log in from two different devices using two different branch accounts → Enter a record on one device → It should appear on the other device's dashboard within seconds.</p></div></div>
+        <div class="setup-step"><div class="step-num">9</div><div class="step-content"><h4>Customise Branch Emails (Optional)</h4><p>You can change the branch email addresses in the <code>BRANCHES</code> object at the top of the JavaScript code. Just ensure the emails match exactly what you created in Firebase Authentication.</p></div></div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--green);">
+        <div class="card-title">✅ Firebase Free Tier Limits (More Than Enough)</div>
+        <p style="font-size:.85rem;color:var(--muted);line-height:1.8;">
+          Firebase's free Spark plan includes: <strong>1GB Firestore storage</strong> · <strong>50,000 reads/day</strong> · <strong>20,000 writes/day</strong> · <strong>Unlimited Authentication</strong><br>
+          For a 7-branch church portal recording hundreds of transactions per month, you will <strong>never exceed the free tier</strong>.
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+</div><!-- /app -->
+
+</body>
+</html>
